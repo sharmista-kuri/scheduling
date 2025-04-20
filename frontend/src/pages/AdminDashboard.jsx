@@ -13,7 +13,8 @@ const AdminDashboard = () => {
   // Fetch all courses from the backend
   const fetchCourses = async () => {
     try {
-      const res = await axios.get('http://localhost/project/backend/api/courses/get.php');
+      const baseURL = process.env.REACT_APP_API_BASE_URL;
+      const res = await axios.get(`${baseURL}/courses/get.php`);
       setCourses(res.data);
     } catch (err) {
       console.error('Error fetching courses:', err);
@@ -39,7 +40,8 @@ const AdminDashboard = () => {
   const handleDelete = async (crn) => {
     if (window.confirm('Are you sure you want to delete this course?')) {
       try {
-        await axios.delete(`http://localhost/project/backend/api/courses/delete.php?crn=${crn}`);
+        const baseURL = process.env.REACT_APP_API_BASE_URL;
+        await axios.delete(`${baseURL}/courses/delete.php?crn=${crn}`);
         fetchCourses();
       } catch (err) {
         console.error('Delete failed:', err);

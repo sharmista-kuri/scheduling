@@ -12,8 +12,9 @@ const CourseModal = ({ course, onClose, onPinToggle }) => {
   const handlePinToggle = async () => {
     setLoading(true);
     try {
+      const baseURL = process.env.REACT_APP_API_BASE_URL;
       const newStatus = course.is_pinned === '1' ? '0' : '1';
-      await axios.put('http://localhost/project/backend/api/courses/update.php', {
+      await axios.put(`${baseURL}/courses/update.php`, {
         crn: course.CRN,
         is_pinned: newStatus
       });

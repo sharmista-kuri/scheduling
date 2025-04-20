@@ -46,7 +46,8 @@ const CalendarPage = () => {
   const [courses, setCourses] = useState([]);
   const [selectedCourse, setSelectedCourse] = useState(null);
   const fetchCourses = () => {
-    axios.get('http://localhost/project/backend/api/courses/get.php')
+    const baseURL = process.env.REACT_APP_API_BASE_URL;
+    axios.get(`${baseURL}/courses/get.php`)
         .then(res => setCourses(res.data))
         .catch(err => console.error('Error loading courses:', err));
     };

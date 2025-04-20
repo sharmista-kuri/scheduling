@@ -44,15 +44,17 @@ const AddCourseModal = ({ onClose, onCourseAdded, editData = null }) => {
     e.preventDefault();
 
     try {
+      const baseURL = process.env.REACT_APP_API_BASE_URL;
+      
       if (editData) {
         // Update
-        await axios.put('http://localhost/project/backend/api/courses/update.php', {
+        await axios.put(`${baseURL}/courses/update.php`, {
           ...formData,
           crn: editData.CRN,
         });
       } else {
         // Create
-        await axios.post('http://localhost/project/backend/api/courses/create.php', formData);
+        await axios.post(`${baseURL}/courses/create.php`, formData);
       }
       onCourseAdded();
       onClose();

@@ -14,7 +14,8 @@ const SignupPage = () => {
   const handleSignup = async (e) => {
     e.preventDefault();
     try {
-      const res = await axios.post('http://localhost/project/backend/api/signup.php', form);
+      const baseURL = process.env.REACT_APP_API_BASE_URL;
+      const res = await axios.post(`${baseURL}/signup.php`, form);
       const { role } = res.data;
       localStorage.setItem('userName', res.data.name);
       localStorage.setItem('userRole', res.data.role);

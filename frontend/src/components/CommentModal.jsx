@@ -5,10 +5,12 @@ import './commentmodal.css';
 const CommentModal = ({ course, onClose }) => {
   const [comments, setComments] = useState([]);
   const [commentText, setCommentText] = useState('');
+  
 
   useEffect(() => {
     if (course) {
-      axios.get(`http://localhost/project/backend/api/comments/get_comments.php?crn=${course.CRN}`)
+      const baseURL = process.env.REACT_APP_API_BASE_URL;
+      axios.get(`${baseURL}/comments/get_comments.php?crn=${course.CRN}`)
         .then(res => setComments(res.data))
         .catch(err => console.error(err));
     }
@@ -19,13 +21,14 @@ const CommentModal = ({ course, onClose }) => {
     if (!commentText.trim()) return;
 
     try {
-      await axios.post('http://localhost/project/backend/api/comments/post_comment.php', {
+      const baseURL = process.env.REACT_APP_API_BASE_URL;
+      await axios.post(`${baseURL}/comments/post_comment.php`, {
         crn: course.CRN,
         fid,
         comment_text: commentText
       });
       setCommentText('');
-      const res = await axios.get(`http://localhost/project/backend/api/comments/get_comments.php?crn=${course.CRN}`);
+      const res = await axios.get(`${baseURL}/comments/get_comments.php?crn=${course.CRN}`);
       setComments(res.data);
     } catch (err) {
       alert("Failed to post comment");
