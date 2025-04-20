@@ -12,6 +12,11 @@ if (!$crn) {
 
 // Delete from Course_Days first (foreign key constraint)
 $conn->query("DELETE FROM Course_Days WHERE CRN = $crn");
+$conn->query("DELETE FROM comment WHERE CRN = $crn");
+$conn->query("DELETE FROM coreqs WHERE CRN1 = $crn");
+$conn->query("DELETE FROM coreqs WHERE CRN2 = $crn");
+$conn->query("DELETE FROM Prereqs WHERE prereq_CRN = $crn");
+$conn->query("DELETE FROM Prereqs WHERE CRN = $crn");
 
 // Then delete the course itself
 if ($conn->query("DELETE FROM Course WHERE CRN = $crn")) {

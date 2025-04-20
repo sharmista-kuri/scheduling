@@ -3,7 +3,7 @@ require_once($_SERVER['DOCUMENT_ROOT'] . '/config.php');
 
 
 $data = json_decode(file_get_contents("php://input"), true);
-
+// var_dump($data);exit;
 $crn = $data['crn'] ?? null;
 if (!$crn) {
     http_response_code(400);
@@ -34,6 +34,8 @@ if (isset($data['faculty_id'])) {
     $params[] = $data['faculty_id'];
     $types .= "i";
 }
+
+
 
 if (isset($data['duration'])) {
     $fields[] = "duration = ?";
@@ -76,6 +78,29 @@ $stmt = $conn->prepare($sql);
 $stmt->bind_param($types, ...$params);
 
 if ($stmt->execute()) {
+
+    
+
+    if (isset($data['days'])) {
+        $days = $data['days'];
+
+        $deleteSql = "DELETE FROM Course_Days WHERE CRN = $crn";
+        mysqli_query($conn, $deleteSql);
+
+        // Prepare the insert statement for Course_Days
+        $stmt = $conn->prepare("INSERT INTO Course_Days (CRN, days) VALUES (?, ?)");
+
+        // Loop through days and bind each one
+        foreach ($days as $day) {
+            $stmt->bind_param("is", $crn, $day);
+            $stmt->execute();
+        }
+    }
+
+    
+
+    
+
     echo json_encode(["message" => "Course updated"]);
 } else {
     http_response_code(500);

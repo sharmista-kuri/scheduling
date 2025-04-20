@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import Swal from 'sweetalert2';
 import CourseTable from '../components/CourseTable';
 import AddCourseModal from '../components/AddCourseModal';
 import Navbar from '../components/Navbar';
@@ -37,18 +38,32 @@ const AdminDashboard = () => {
     setShowModal(true);
   };
   
+
   const handleDelete = async (crn) => {
-    if (window.confirm('Are you sure you want to delete this course?')) {
+    const result = await Swal.fire({
+      title: 'Are you sure?',
+      text: 'Do you really want to delete this course?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#3085d6',
+      confirmButtonText: 'Yes, delete it!',
+      cancelButtonText: 'Cancel'
+    });
+  
+    if (result.isConfirmed) {
       try {
         const baseURL = process.env.REACT_APP_API_BASE_URL;
         await axios.delete(`${baseURL}/courses/delete.php?crn=${crn}`);
-        fetchCourses();
+        await fetchCourses();
+        Swal.fire('Deleted!', 'The course has been deleted.', 'success');
       } catch (err) {
         console.error('Delete failed:', err);
-        alert('Failed to delete course');
+        Swal.fire('Error', 'Failed to delete the course.', 'error');
       }
     }
   };
+  
   
 
   return (

@@ -8,6 +8,7 @@ $sql = "
         c.course_code,
         c.name AS course_name,
         f.name AS faculty_name,
+        f.fid AS faculty_id,
         c.start_time,
         c.end_time,
         c.duration,

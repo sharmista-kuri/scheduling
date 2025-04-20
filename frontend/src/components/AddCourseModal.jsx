@@ -13,7 +13,16 @@ const AddCourseModal = ({ onClose, onCourseAdded, editData = null }) => {
     is_pinned: false,
   });
 
+  const [facultyList, setFacultyList] = useState([]);
   const daysList = ['M', 'T', 'W', 'TH', 'F'];
+
+  // Load faculty list once
+  useEffect(() => {
+    const baseURL = process.env.REACT_APP_API_BASE_URL;
+    axios.get(`${baseURL}/faculty/get.php`)
+      .then(res => setFacultyList(res.data))
+      .catch(err => console.error("Failed to load faculty list", err));
+  }, []);
 
   // Prefill form if editing
   useEffect(() => {
@@ -21,7 +30,7 @@ const AddCourseModal = ({ onClose, onCourseAdded, editData = null }) => {
       setFormData({
         course_code: editData.course_code,
         name: editData.course_name,
-        faculty_id: editData.faculty_id || '', // you might need to include it in get.php
+        faculty_id: editData.faculty_id || '',
         duration: editData.duration || '',
         start_time: editData.start_time,
         end_time: editData.end_time,
@@ -42,18 +51,15 @@ const AddCourseModal = ({ onClose, onCourseAdded, editData = null }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
     try {
       const baseURL = process.env.REACT_APP_API_BASE_URL;
-      
+
       if (editData) {
-        // Update
         await axios.put(`${baseURL}/courses/update.php`, {
           ...formData,
           crn: editData.CRN,
         });
       } else {
-        // Create
         await axios.post(`${baseURL}/courses/create.php`, formData);
       }
       onCourseAdded();
@@ -78,21 +84,29 @@ const AddCourseModal = ({ onClose, onCourseAdded, editData = null }) => {
                  value={formData.name}
                  onChange={(e) => setFormData({ ...formData, name: e.target.value })} required />
 
-          <input type="number" className="form-control mb-2" placeholder="Faculty ID"
-                 value={formData.faculty_id}
-                 onChange={(e) => setFormData({ ...formData, faculty_id: e.target.value })} required />
+          <select className="form-control mb-2"
+                  value={formData.faculty_id}
+                  onChange={(e) => setFormData({ ...formData, faculty_id: e.target.value })}
+                  required>
+            <option value="">Select Faculty</option>
+            {facultyList.map(faculty => (
+              <option key={faculty.fid} value={faculty.fid}>
+                {faculty.name}
+              </option>
+            ))}
+          </select>
 
           <input type="number" className="form-control mb-2" placeholder="Duration (mins)"
                  value={formData.duration}
-                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })} required />
+                 onChange={(e) => setFormData({ ...formData, duration: e.target.value })} />
 
           <input type="time" className="form-control mb-2"
                  value={formData.start_time}
-                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })} required />
+                 onChange={(e) => setFormData({ ...formData, start_time: e.target.value })} />
 
           <input type="time" className="form-control mb-2"
                  value={formData.end_time}
-                 onChange={(e) => setFormData({ ...formData, end_time: e.target.value })} required />
+                 onChange={(e) => setFormData({ ...formData, end_time: e.target.value })} />
 
           <div className="mb-2">
             <label>Days:</label><br />
