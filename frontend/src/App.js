@@ -5,6 +5,7 @@ import AdminDashboard from './pages/AdminDashboard';
 import FacultyDashboard from './pages/FacultyDashboard';
 import SignupPage from './pages/SignupPage';
 import CalendarPage from './pages/CalendarPage';
+import ProfilePage from './pages/ProfilePage';
 import { GoogleOAuthProvider } from '@react-oauth/google';
 
 const clientId = '631792757334-5mrcs31gfv0f0uogr4n183ct6gkhljda.apps.googleusercontent.com'; // Replace this with your actual Google OAuth Client ID
@@ -19,6 +20,7 @@ function App() {
           <Route path="/admin" element={<AdminDashboard />} />
           <Route path="/faculty" element={<FacultyDashboard />} />
           <Route path="/calendar" element={<CalendarPage />} />
+          <Route path="/profile" element={<ProfilePage />} />
         </Routes>
       </Router>
     </GoogleOAuthProvider>

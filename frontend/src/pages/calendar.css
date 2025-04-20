@@ -7,9 +7,10 @@
 .calendar-grid {
   display: grid;
   grid-template-columns: 80px repeat(5, 1fr); /* 1 time col + 5 weekdays */
-  grid-template-rows: auto repeat(12, 60px);  /* 8 AM to 8 PM */
+  grid-template-rows: auto repeat(48, 15px);  /* 8 AM to 8 PM, 15-min intervals */
   gap: 1px;
 }
+
 
 .calendar-header {
   background: #f0f0f0;

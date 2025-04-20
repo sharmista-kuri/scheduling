@@ -20,6 +20,8 @@ const Navbar = ({ onLogout }) => {
           <span className="navbar-brand mb-0 fs-5">📅 Course Scheduler</span>
           <a href="/calendar" className="btn btn-outline-light btn-sm">
             View Faculty
+          </a><a href="/admin" className="btn btn-outline-light btn-sm">
+            View Course
           </a>
           <a href="/calendar" className="btn btn-outline-light btn-sm">
             View Calendar
