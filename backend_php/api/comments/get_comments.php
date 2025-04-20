@@ -10,7 +10,7 @@ if (!$crn) {
 }
 
 $sql = "
-SELECT c.comment_text, c.time_posted, f.name AS faculty_name
+SELECT c.cid, c.comment_text, c.time_posted, f.name AS faculty_name, f.fid
 FROM Comment c
 JOIN Faculty f ON c.fid = f.fid
 WHERE c.CRN = ?
