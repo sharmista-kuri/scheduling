@@ -1,6 +1,6 @@
 <?php
 $host = 'localhost';
-$dbname = 'course_scheduling';
+$dbname = 'course_scheduling_db';
 $username = 'root';
 $password = '';
 

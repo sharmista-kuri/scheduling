@@ -15,7 +15,7 @@ const SignupPage = () => {
     e.preventDefault();
     try {
       const baseURL = process.env.REACT_APP_API_BASE_URL;
-      const res = await axios.post(`${baseURL}/signup.php`, form);
+      const res = await axios.post(`${baseURL}/signup/`, form);
       const { role } = res.data;
       localStorage.setItem('userName', res.data.name);
       localStorage.setItem('userRole', res.data.role);

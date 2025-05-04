@@ -13,11 +13,11 @@ $stmt->execute();
 $result = $stmt->get_result();
 
 if ($user = $result->fetch_assoc()) {
-    if (password_verify($password, $user['password'])) {
+    if (password_verify($password, $user['PASSWORD'])) {
         echo json_encode([
             "role" => $user['auth_level'],
             "fid" => $user['fid'],
-            "name" => $user['name'],
+            "name" => $user['NAME'],
         ]);
     } else {
         http_response_code(401);

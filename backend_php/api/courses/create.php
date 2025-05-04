@@ -28,6 +28,23 @@ if ($stmt->execute()) {
         $dstmt->execute();
     }
 
+    // Assuming you got $crn = last_insert_id() or provided in PUT
+    $prereqs = $_POST['prereqs'] ?? [];
+    $coreqs = $_POST['coreqs'] ?? [];
+
+    foreach ($prereqs as $p) {
+        $stmt = $conn->prepare("INSERT INTO Prereqs (prereq_CRN, CRN) VALUES (?, ?)");
+        $stmt->bind_param("ii", $p, $crn);
+        $stmt->execute();
+    }
+
+    foreach ($coreqs as $c) {
+        $stmt = $conn->prepare("INSERT INTO Coreqs (CRN1, CRN2) VALUES (?, ?)");
+        $stmt->bind_param("ii", $crn, $c);
+        $stmt->execute();
+    }
+
+
     echo json_encode(["status" => "success", "message" => "Course added"]);
 } else {
     echo json_encode(["status" => "error", "message" => "Failed to add course"]);

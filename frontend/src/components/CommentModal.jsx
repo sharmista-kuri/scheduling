@@ -5,6 +5,10 @@ import { toast } from 'react-toastify';
 import EmojiPicker from 'emoji-picker-react';
 import InfiniteScroll from 'react-infinite-scroll-component';
 
+import Swal from 'sweetalert2';
+
+
+
 const baseURL = process.env.REACT_APP_API_BASE_URL;
 
 const CommentModal = ({ course, onClose }) => {
@@ -20,11 +24,17 @@ const CommentModal = ({ course, onClose }) => {
   const currentFid = localStorage.getItem('fid');
   const authLevel = localStorage.getItem('auth_level');
 
+ 
+
 
 
   const fetchComments = useCallback(async (pg = 1, reset = false) => {
     try {
-      const res = await axios.get(`${baseURL}/comments/get_comments.php?crn=${course.CRN}&page=${pg}`);
+      // fetch("http://localhost:8000/api/test-cors/")
+      // .then(res => res.json())
+      // .then(data => console.log("✅ Success:", data))
+      // .catch(err => console.error("❌ CORS still broken:", err));
+      const res = await axios.get(`${baseURL}/comments/${course.CRN}`);
       if (reset) {
         setComments(res.data);
       } else {
@@ -46,10 +56,10 @@ const CommentModal = ({ course, onClose }) => {
   const handlePost = async () => {
     if (!commentText.trim()) return;
     try {
-      await axios.post(`${baseURL}/comments/post_comment.php`, {
+      await axios.post(`${baseURL}/comment/`, {
         crn: course.CRN,
         fid: currentFid,
-        comment_text: commentText
+        text: commentText
       });
       toast.success("Comment posted");
       setCommentText('');
@@ -61,16 +71,28 @@ const CommentModal = ({ course, onClose }) => {
   };
 
   const handleDelete = async (cid) => {
-    if (!window.confirm('Are you sure you want to delete this comment?')) return;
+    const confirm = await Swal.fire({
+      title: 'Delete comment?',
+      text: 'Are you sure you want to delete this comment?',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonColor: '#d33',
+      cancelButtonColor: '#aaa',
+      confirmButtonText: 'Yes, delete it!'
+    });
+  
+    if (!confirm.isConfirmed) return;
+  
     try {
-      await axios.delete(`${baseURL}/comments/delete_comment.php`, {
-        data: { cid, fid: currentFid }
+      await axios.post(`${baseURL}/comment/${cid}/delete/`, {
+        fid: currentFid 
       });
       toast.success("Comment deleted");
       fetchComments(1, true);
       setPage(2);
     } catch (err) {
       toast.error("Failed to delete");
+      console.error(err);
     }
   };
 
@@ -82,10 +104,11 @@ const CommentModal = ({ course, onClose }) => {
   const handleUpdate = async (cid) => {
     if (!editingText.trim()) return;
     try {
-      await axios.put(`${baseURL}/comments/edit_comment.php`, {
+      await axios.post(`${baseURL}/comment/${cid}/edit/`, {
+      // await axios.put(`${baseURL}/comments/edit_comment.php`, {
         cid,
         fid: currentFid,
-        comment_text: editingText
+        text: editingText
       });
       toast.success("Comment updated");
       setEditingCid(null);

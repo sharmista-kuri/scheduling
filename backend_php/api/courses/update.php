@@ -91,11 +91,37 @@ if ($stmt->execute()) {
         $stmt = $conn->prepare("INSERT INTO Course_Days (CRN, days) VALUES (?, ?)");
 
         // Loop through days and bind each one
-        foreach ($days as $day) {
-            $stmt->bind_param("is", $crn, $day);
+        //foreach ($days as $day) {
+        $days_str = implode(",", $days);
+        $stmt->bind_param("is", $crn, $days_str);
+        $stmt->execute();
+        //}
+    }
+
+    // ------------------------------
+    // Update Prereqs
+    if (isset($data['prereqs']) && is_array($data['prereqs'])) {
+        $conn->query("DELETE FROM Prereqs WHERE CRN = $crn");
+
+        $stmt = $conn->prepare("INSERT INTO Prereqs (prereq_CRN, CRN) VALUES (?, ?)");
+        foreach ($data['prereqs'] as $pre_crn) {
+            $stmt->bind_param("ii", $pre_crn, $crn);
             $stmt->execute();
         }
     }
+
+    // ------------------------------
+    // Update Coreqs
+    if (isset($data['coreqs']) && is_array($data['coreqs'])) {
+        $conn->query("DELETE FROM Coreqs WHERE CRN1 = $crn");
+
+        $stmt = $conn->prepare("INSERT INTO Coreqs (CRN1, CRN2) VALUES (?, ?)");
+        foreach ($data['coreqs'] as $co_crn) {
+            $stmt->bind_param("ii", $crn, $co_crn);
+            $stmt->execute();
+        }
+    }
+
 
     
 

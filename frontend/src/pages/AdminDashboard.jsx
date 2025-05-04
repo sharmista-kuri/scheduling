@@ -1,107 +1,57 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import Swal from 'sweetalert2';
-import CourseTable from '../components/CourseTable';
-import AddCourseModal from '../components/AddCourseModal';
-import Navbar from '../components/Navbar';
+import './AdminDashboard.css';
 
 const AdminDashboard = () => {
-  const [courses, setCourses] = useState([]);
-  const [showModal, setShowModal] = useState(false);
-  const [editCourse, setEditCourse] = useState(null);
 
+  const [facultyCount, setFacultyCount] = useState(0);
+  const [courseCount, setCourseCount] = useState(0);
 
-  // Fetch all courses from the backend
-  const fetchCourses = async () => {
-    try {
-      const baseURL = process.env.REACT_APP_API_BASE_URL;
-      const res = await axios.get(`${baseURL}/courses/get.php`);
-      setCourses(res.data);
-    } catch (err) {
-      console.error('Error fetching courses:', err);
-    }
-  };
-
-  // Fetch on mount
   useEffect(() => {
-    fetchCourses();
+    const baseURL = process.env.REACT_APP_API_BASE_URL;
+
+    axios.get(`${baseURL}/admin/total_counts/`)
+      .then((res) => {
+        setFacultyCount(res.data.faculty_count);
+        setCourseCount(res.data.course_count);
+      })
+      .catch((err) => {
+        console.error('Error fetching counts:', err);
+      });
   }, []);
 
-  // Clear session and redirect on logout
-  const handleLogout = () => {
-    localStorage.clear();
-    window.location.href = '/';
-  };
-
-  const handleEdit = (course) => {
-    setEditCourse(course);
-    setShowModal(true);
-  };
-  
-
-  const handleDelete = async (crn) => {
-    const result = await Swal.fire({
-      title: 'Are you sure?',
-      text: 'Do you really want to delete this course?',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonColor: '#d33',
-      cancelButtonColor: '#3085d6',
-      confirmButtonText: 'Yes, delete it!',
-      cancelButtonText: 'Cancel'
-    });
-  
-    if (result.isConfirmed) {
-      try {
-        const baseURL = process.env.REACT_APP_API_BASE_URL;
-        await axios.delete(`${baseURL}/courses/delete.php?crn=${crn}`);
-        await fetchCourses();
-        Swal.fire('Deleted!', 'The course has been deleted.', 'success');
-      } catch (err) {
-        console.error('Delete failed:', err);
-        Swal.fire('Error', 'Failed to delete the course.', 'error');
-      }
-    }
-  };
-  
-  
-
   return (
-    <>
-      {/* Global navbar */}
-      <Navbar onLogout={handleLogout} />
+    <div className="admin-dashboard">
+      <header className="admin-header">
+        <h1>Admin Dashboard</h1>
+        {/* <p>Manage your system effectively and effortlessly.</p> */}
+      </header>
 
-      {/* Page content */}
-      <div className="container mt-4">
-        <div className="d-flex justify-content-between align-items-center mb-3">
-          <h2>Admin Dashboard</h2>
-          <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-            + Add New Course
-          </button>
+      <section className="stats-section">
+        <div className="stat-card">
+          <h2>Total Faculty</h2>
+          <p>{facultyCount}</p>
         </div>
+        <div className="stat-card">
+          <h2>Total Courses</h2>
+          <p>{courseCount}</p>
+        </div>
+      </section>
 
-        {/* Table displaying all courses */}
-        <CourseTable
-          courses={courses}
-          onEdit={handleEdit}
-          onDelete={handleDelete}
-        />
-
-
-        {/* Add course modal */}
-        {showModal && (
-          <AddCourseModal
-            editData={editCourse}
-            onClose={() => {
-              setEditCourse(null);
-              setShowModal(false);
-            }}
-            onCourseAdded={fetchCourses}
-          />
-        )}
-
-      </div>
-    </>
+      <section className="nav-section">
+        {[
+          { title: 'Manage Faculty', link: '/admin/faculty' },
+          { title: 'Manage Courses', link: '/admin/courses' },
+          { title: 'Upload CSV', link: '/admin/courses' },
+          { title: 'Calender', link: '/calendar' },
+        ].map((item, i) => (
+          <a href={item.link} key={i} className="nav-card">
+            <h3>{item.title}</h3>
+            <p>Click to view</p>
+          </a>
+        ))}
+      </section>
+    </div>
   );
 };
 

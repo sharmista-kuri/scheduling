@@ -1,26 +1,32 @@
 import React, { useState } from 'react';
 import axios from 'axios';
 import { GoogleLogin } from '@react-oauth/google';
+import './LoginForm.css'; // Optional: create this CSS file for custom styles
 
 const LoginForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [message, setMessage] = useState('');
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setMessage('');
     try {
       const baseURL = process.env.REACT_APP_API_BASE_URL;
 
-      const res = await axios.post(`${baseURL}/login.php`, {
+      const res = await axios.post(`${baseURL}/login/`, {
         email,
-        password
+        password,
       });
 
       const { role } = res.data;
 
       localStorage.setItem('userName', res.data.name);
+      localStorage.setItem('auth_level', res.data.role);
       localStorage.setItem('userRole', res.data.role);
       localStorage.setItem('fid', res.data.fid);
+      localStorage.setItem('isLoggedIn', 'true');
 
       if (role === 'admin') {
         window.location.href = '/admin';
@@ -28,7 +34,7 @@ const LoginForm = () => {
         window.location.href = '/faculty';
       }
     } catch (err) {
-      alert('Invalid credentials');
+      setMessage('❌ Invalid credentials. Please try again.');
     }
   };
 
@@ -37,7 +43,6 @@ const LoginForm = () => {
 
     try {
       const res = await fetch('http://localhost:8000/api/auth/google/', {
-      // const res = await fetch(`${process.env.REACT_APP_API_BASE_URL}/api/auth/google/`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ token }),
@@ -49,21 +54,25 @@ const LoginForm = () => {
         localStorage.setItem('accessToken', data.access);
         localStorage.setItem('refreshToken', data.refresh);
         alert('Google Login Successful!');
-
-        // Redirect — customize this if you want role-based logic later
         window.location.href = '/calendar';
       } else {
-        alert('Google Login Failed');
+        setMessage('❌ Google login failed.');
       }
     } catch (error) {
       console.error('Login Error:', error);
-      alert('Something went wrong during Google login');
+      setMessage('❌ Something went wrong during Google login.');
     }
   };
 
   return (
     <>
       <form onSubmit={handleLogin}>
+        <h2 className="text-center mb-4">🔐 Login</h2>
+
+        {message && (
+          <div className="status-message mb-3">{message}</div>
+        )}
+
         <div className="mb-3">
           <label>Email</label>
           <input
@@ -74,27 +83,38 @@ const LoginForm = () => {
             required
           />
         </div>
+
         <div className="mb-3">
           <label>Password</label>
-          <input
-            type="password"
-            className="form-control"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
+          <div className="input-group">
+            <input
+              type={showPassword ? 'text' : 'password'}
+              className="form-control"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+            />
+            <button
+              type="button"
+              className="btn btn-outline-secondary"
+              onClick={() => setShowPassword(!showPassword)}
+              tabIndex={-1}
+            >
+              {showPassword ? '🙈' : '👁️'}
+            </button>
+          </div>
         </div>
+
         <button className="btn btn-primary w-100">Login</button>
       </form>
 
       <hr />
-      <div className="text-center mt-3">
-        {/* <p>Or sign in with Google</p> */}
+      {/* <div className="text-center mt-3">
         <GoogleLogin
           onSuccess={handleGoogleLogin}
-          onError={() => console.log('Google Login Failed')}
+          onError={() => setMessage('❌ Google Login Failed')}
         />
-      </div>
+      </div> */}
     </>
   );
 };

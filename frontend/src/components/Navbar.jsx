@@ -3,7 +3,7 @@ import defaultPic from '../assets/profile.png'; // Replace with your actual imag
 
 const Navbar = ({ onLogout }) => {
   const userName = localStorage.getItem('userName') || "User";
-  const userRole = localStorage.getItem('userRole') || "Guest";
+  const userRole = localStorage.getItem('userRole') || "faculty";
 //   const defaultPic = localStorage.getItem('userPic');
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
@@ -17,15 +17,39 @@ const Navbar = ({ onLogout }) => {
       <div className="container-fluid d-flex justify-content-between align-items-center">
         {/* Left side: Brand + View Calendar */}
         <div className="d-flex align-items-center gap-3">
-          <span className="navbar-brand mb-0 fs-5">📅 Course Scheduler</span>
-          <a href="/calendar" className="btn btn-outline-light btn-sm">
-            View Faculty
-          </a><a href="/admin" className="btn btn-outline-light btn-sm">
-            View Course
-          </a>
+
+          {userRole === "faculty" && (
+            <>
+              <a href="/faculty/" className="navbar-brand mb-0 fs-5">📅 Course Scheduler</a>
+            </>
+          )}
+          
+          {userRole === "admin" && (
+            <>
+              <a href="/admin/" className="navbar-brand mb-0 fs-5">📅 Course Scheduler</a>
+              <a href="/admin/faculty" className="btn btn-outline-light btn-sm">
+                View Faculty
+              </a>
+              <a href="/admin/courses" className="btn btn-outline-light btn-sm">
+                View Course
+              </a>
+              <a href="/admin/configuration" className="btn btn-outline-light btn-sm">
+                View Configuration
+              </a>
+              <a href="/generate/" className="btn btn-outline-light btn-sm">
+                Generate Algorithm
+              </a>
+
+            </>
+          )}
+
           <a href="/calendar" className="btn btn-outline-light btn-sm">
             View Calendar
           </a>
+          
+
+          
+
         </div>
 
         {/* Right side: Profile dropdown */}
@@ -52,11 +76,12 @@ const Navbar = ({ onLogout }) => {
             >
               <h6 className="dropdown-header">{userName} ({userRole})</h6>
               <a className="dropdown-item" href="/profile">Profile</a>
-              <a className="dropdown-item" href="/settings">Settings</a>
+              <a className="dropdown-item" href="/change_password">Change Password</a>
               <div className="dropdown-divider"></div>
-              <button className="dropdown-item text-danger" onClick={onLogout}>
+              <a className="dropdown-item text-danger" href="/logout">Logout</a>
+              {/* <button className="dropdown-item text-danger" onClick={onLogout}>
                 Logout
-              </button>
+              </button> */}
             </div>
           )}
         </div>

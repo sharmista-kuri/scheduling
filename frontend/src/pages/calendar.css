@@ -7,7 +7,7 @@
 .calendar-grid {
   display: grid;
   grid-template-columns: 80px repeat(5, 1fr); /* 1 time col + 5 weekdays */
-  grid-template-rows: auto repeat(48, 15px);  /* 8 AM to 8 PM, 15-min intervals */
+  grid-template-rows: auto repeat(54, 15px);  /* 8 AM to 8 PM, 15-min intervals */
   gap: 1px;
 }
 
@@ -55,3 +55,11 @@
   font-size: 14px;
   margin-right: 4px;
 }
+
+/* Optional: Add if using a class instead of inline */
+.small-input {
+  max-width: 300px;
+  font-size: 14px;
+  padding: 6px 10px;
+}
+

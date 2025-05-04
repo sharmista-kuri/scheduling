@@ -1,0 +1,9 @@
+.status-message {
+    padding: 10px 15px;
+    border-radius: 5px;
+    font-weight: 500;
+    background-color: #ffe6e6;
+    color: #cc0000;
+    border: 1px solid #cc0000;
+  }
+  

@@ -41,8 +41,8 @@ const getCourseStyle = (code) => {
   };
 };
 
-const timeSlots = Array.from({ length: 48 }, (_, i) => {
-  const totalMinutes = 480 + i * 15; // 8:00 AM = 480 minutes
+const timeSlots = Array.from({ length: 52 }, (_, i) => {
+  const totalMinutes = 480 + i * 15;
   const hour = Math.floor(totalMinutes / 60);
   const minutes = totalMinutes % 60;
   const time = moment({ hour, minute: minutes }).format(minutes === 0 ? 'h A' : 'h:mm');
@@ -54,11 +54,12 @@ const CalendarPage = () => {
   const [filteredCourses, setFilteredCourses] = useState([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCourse, setSelectedCourse] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   const baseURL = process.env.REACT_APP_API_BASE_URL;
 
   const fetchCourses = useCallback(() => {
-    axios.get(`${baseURL}/courses/get.php`)
+    axios.get(`${baseURL}/courses/`)
       .then(res => {
         setCourses(res.data);
         setFilteredCourses(res.data);
@@ -79,17 +80,50 @@ const CalendarPage = () => {
     setFilteredCourses(filtered);
   }, [searchTerm, courses]);
 
+  const handleReload = () => {
+    setLoading(true);
+    fetch(`${baseURL}/courses/reload_schedule.php`) 
+      .then(res => res.json())
+      .then(data => {
+        console.log('Schedule reload triggered:', data);
+        window.location.reload();
+      })
+      .catch(err => {
+        console.error('Failed to reload schedule:', err);
+        setLoading(false);
+      });
+  };
+
   return (
     <>
       <Navbar />
       <div style={{ padding: '20px' }}>
-        <input
-          type="text"
-          className="form-control mb-3"
-          placeholder="🔍 Filter by course, name, or faculty"
-          value={searchTerm}
-          onChange={(e) => setSearchTerm(e.target.value)}
-        />
+        <div className="d-flex mb-3 gap-2 align-items-center">
+          <input
+            type="text"
+            className="form-control"
+            style={{ maxWidth: '300px', fontSize: '14px', padding: '6px 10px' }}
+            placeholder="🔍 Filter by course, name, or faculty"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+
+          <button
+            className="btn btn-outline-primary d-flex align-items-center gap-2"
+            style={{ fontSize: '13px', padding: '6px 10px' }}
+            onClick={handleReload}
+            disabled={loading}
+          >
+            {loading ? (
+              <>
+                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                Loading...
+              </>
+            ) : (
+              <>🔄 Refresh Schedule</>
+            )}
+          </button>
+        </div>
 
         <div className="calendar-container border rounded p-3 shadow bg-light">
           <div className="calendar-grid">
@@ -122,10 +156,12 @@ const CalendarPage = () => {
                 const colIndex = days.indexOf(day);
                 if (colIndex === -1) return null;
 
-                const startMin = moment.duration(course.start_time).asMinutes();
-                const endMin = moment.duration(course.end_time).asMinutes();
+                const startMin = course.start_time;
+                const endMin = course.end_time;
+                if (startMin < 480 || endMin <= startMin) return null;
                 const rowStart = Math.floor((startMin - 480) / 15) + 3;
                 const durationRows = Math.ceil((endMin - startMin) / 15);
+
                 const style = getCourseStyle(course.course_code);
 
                 return (
@@ -144,13 +180,15 @@ const CalendarPage = () => {
                         {course.is_pinned === '1' || course.is_pinned === 1 ? '📌' : 'ℹ'}
                       </span> {course.course_code}
                     </div>
-                    <div>{moment(course.start_time, 'HH:mm:ss').format('h:mm A')}–{moment(course.end_time, 'HH:mm:ss').format('h:mm A')}</div>
+                    <div>
+                      {moment().startOf('day').add(course.start_time, 'minutes').format('h:mm A')}–
+                      {moment().startOf('day').add(course.end_time, 'minutes').format('h:mm A')}
+                    </div>
+
                     <div style={{ fontSize: '11px' }}>{course.course_name}</div>
 
-                    {/* 👨‍🏫 Faculty info */}
                     <div className="d-flex align-items-center mt-1">
-                      <img
-                        // src={course.faculty_pic || `${process.env.REACT_APP_API_BASE_URL}/default-faculty.png`}
+                      {/* <img
                         src={course.faculty_pic || `${process.env.REACT_APP_API_BASE_URL}/profile.png`}
                         alt="faculty"
                         style={{
@@ -160,7 +198,7 @@ const CalendarPage = () => {
                           objectFit: 'cover',
                           marginRight: '5px'
                         }}
-                      />
+                      /> */}
                       <span style={{ fontSize: '11px' }}>{course.faculty_name}</span>
                     </div>
                   </div>

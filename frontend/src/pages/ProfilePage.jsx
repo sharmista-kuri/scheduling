@@ -2,8 +2,11 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import Navbar from '../components/Navbar';
 import './profile.css';
+import './ChangePassword.css';
 
 const ProfilePage = () => {
+  const [message, setMessage] = useState('');
+  const [messageType, setMessageType] = useState('');
   const [profile, setProfile] = useState({
     name: "",
     email: "",
@@ -14,11 +17,12 @@ const ProfilePage = () => {
   const baseURL = process.env.REACT_APP_API_BASE_URL;
   useEffect(() => {
     axios
-      .get(`${baseURL}/faculty/get_profile.php?fid=${fid}`)
+      //.get(`${baseURL}/faculty/get_profile.php?fid=${fid}`)
+      .get(`${baseURL}/faculty/${fid}`)
       .then((res) => {
         console.log(res.data.name);
         setProfile({
-          name: res.data.name,
+          name: res.data.NAME,
           email: res.data.email,
           password: "", // Don’t show password, only on update
         });
@@ -31,11 +35,22 @@ const ProfilePage = () => {
 
   const handleUpdate = async () => {
     try {
-      await axios.post(`${baseURL}/faculty/update_profile.php`, {
-        fid,
-        ...profile,
-      });
-      alert("Profile updated successfully!");
+      // await axios.post(`${baseURL}/faculty/update_profile.php`, {
+      //   fid,
+      //   ...profile,
+      // });
+      const response = await axios.post(`${baseURL}/faculty/${fid}/update/`, profile);
+
+      // alert("Profile updated successfully!");
+      const data = await response.data;
+      if (data.success) {
+        setMessage('✅ Profile changed successfully!');
+        setMessageType('success');
+      } else {
+        setMessage(`❌ ${data.message || 'Profile change failed.'}`);
+        setMessageType('error');
+      }
+
     } catch (err) {
       console.error(err);
       alert("Update failed");
@@ -46,13 +61,14 @@ const ProfilePage = () => {
     <>
     <Navbar />
     <div className="profile-container text-center">
-      <img
+      {/* <img
         src={`${process.env.REACT_APP_API_BASE_URL}/profile.png`}
         alt="Profile"
         className="profile-picture mb-3"
-      />
+      /> */}
 
       <h2>My Profile</h2>
+      {message && <div className={`status-message ${messageType}`}>{message}</div>}
       <input
         type="text"
         name="name"
