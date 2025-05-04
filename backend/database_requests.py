@@ -130,12 +130,8 @@ def create_course(payload: Dict[str, Any]) -> int:
         )
         crn = payload["crn"]
         # Course_Days
-        # for d in payload["days"]:
-        #     cur.execute("INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, d))
-
-        days_str = ",".join(payload.get("days", []))
-        cur.execute("INSERT INTO Course_Days (CRN, days) VALUES (%s, %s);", (crn, days_str))
-
+        for d in payload["days"]:
+            cur.execute("INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, d))
         # Prereqs
         # print("[DEBUG] delete request body:", payload["course_code"])
         # Resolve prereq CRNs to course codes
@@ -242,18 +238,13 @@ def update_course(crn: int, patch: Dict[str, Any]):
         params.append(v)
     params.append(crn)
 
+    # print(fields, params)
+
     with _get_connection().cursor() as cur:
         if fields:
             cur.execute(f"UPDATE Course SET {', '.join(fields)} WHERE CRN=%s;", params)
 
         # Days
-        # if "days" in patch:
-        #     cur.execute("DELETE FROM Course_Days WHERE CRN=%s;", (crn,))
-        #     for d in patch["days"]:
-        #         cur.execute(
-        #             "INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, d)
-        #         )
-
         if "days" in patch:
             cur.execute("DELETE FROM Course_Days WHERE CRN=%s;", (crn,))
             days_str = ",".join(patch.get("days", []))

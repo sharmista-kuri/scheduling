@@ -40,7 +40,7 @@ def upload_csv_view(request):
         csv_path = os.path.join(default_storage.location, path)
 
         try:
-            main(csv_path)  
+            main(csv_path)
             return JsonResponse(
                 {"success": True, "message": "CSV uploaded and processed."}
             )
@@ -68,7 +68,7 @@ def run_scheduler(request):
                 for c in course_list
             ]
 
-            print(course_list)
+            # print(course_list)
 
             return JsonResponse({"success": True, "courses": result, "log": output_log})
         except Exception as e:

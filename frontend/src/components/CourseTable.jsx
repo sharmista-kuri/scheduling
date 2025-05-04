@@ -1,4 +1,5 @@
 import React from 'react';
+import moment from 'moment';
 
 const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
   const getSortSymbol = (key) => {
@@ -12,6 +13,13 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
     cursor: 'pointer',
     whiteSpace: 'nowrap',
     userSelect: 'none',
+  };
+
+  const formatTime = (timeStr) => {
+    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, seconds);
+    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   };
 
   return (
@@ -33,6 +41,7 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
           <th onClick={() => onSort('days')} style={headerStyle}>
             Days <span>{getSortSymbol('days')}</span>
           </th>
+          <th style={headerStyle}>Time</th>
           <th onClick={() => onSort('duration')} style={headerStyle}>
             Duration <span>{getSortSymbol('duration')}</span>
           </th>
@@ -43,7 +52,7 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
       <tbody>
         {courses.length === 0 ? (
           <tr>
-            <td colSpan="7" className="text-center">No courses found</td>
+            <td colSpan="9" className="text-center">No courses found</td>
           </tr>
         ) : (
           courses.map((course) => (
@@ -53,6 +62,8 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
               <td>{course.course_name}</td>
               <td>{course.faculty_name}</td>
               <td>{course.days}</td>
+              <td>{moment().startOf('day').add(course.start_time, 'minutes').format('h:mm A')}–
+                          {moment().startOf('day').add(course.end_time, 'minutes').format('h:mm A')}</td>
               <td>{course.duration} mins</td>
               <td>{course.is_pinned === 1 ? '✅' : '❌'}</td>
               <td>

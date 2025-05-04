@@ -35,7 +35,7 @@ class Course:
         if days != None:
             self.days = days.split(",")
         else:
-            self.days = days
+            self.days = days or []
         self.fid = fid
         self.prereqs = prereqs
         self.coreqs = coreqs

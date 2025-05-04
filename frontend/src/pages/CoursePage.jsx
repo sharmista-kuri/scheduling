@@ -18,6 +18,9 @@ const CoursePage = () => {
     pinned: '',
   });
 
+  const [currentPage, setCurrentPage] = useState(1);
+  const coursesPerPage = 7;
+
   const [showModal, setShowModal] = useState(false);
   const [editCourse, setEditCourse] = useState(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
@@ -27,7 +30,6 @@ const CoursePage = () => {
       const baseURL = process.env.REACT_APP_API_BASE_URL;
       const res = await axios.get(`${baseURL}/courses/`);
       console.log("Fetched courses:", res.data);
-
       setCourses(res.data);
     } catch (err) {
       console.error('Error fetching courses:', err);
@@ -62,6 +64,7 @@ const CoursePage = () => {
     }
 
     setFilteredCourses(filtered);
+    setCurrentPage(1); // reset page when filters/sort change
   }, [courses, filters, sortConfig]);
 
   const handleSort = (key) => {
@@ -103,6 +106,12 @@ const CoursePage = () => {
       }
     }
   };
+
+  // Pagination logic
+  const indexOfLastCourse = currentPage * coursesPerPage;
+  const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
+  const currentCourses = filteredCourses.slice(indexOfFirstCourse, indexOfLastCourse);
+  const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
 
   return (
     <>
@@ -172,14 +181,32 @@ const CoursePage = () => {
           </div>
         </div>
 
+        {/* Course Table */}
         <CourseTable
-          courses={filteredCourses}
+          courses={currentCourses}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onSort={handleSort}
           sortConfig={sortConfig}
         />
 
+        {/* Pagination */}
+        <div className="d-flex justify-content-center mt-3">
+          <ul className="pagination">
+            {[...Array(totalPages)].map((_, i) => (
+              <li
+                key={i}
+                className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}
+                style={{ cursor: 'pointer' }}
+                onClick={() => setCurrentPage(i + 1)}
+              >
+                <span className="page-link">{i + 1}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+
+        {/* Modals */}
         {showModal && (
           <AddCourseModal
             editData={editCourse}
