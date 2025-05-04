@@ -619,7 +619,8 @@ def create_configuration(request):
     travel_time = data.get("travel_time", 0)
     days = data.get("days", [])
     times = data.get("times", [])
-
+    fid = data.get("fid")
+    
     with connection.cursor() as cursor:
         cursor.execute(
             "INSERT INTO Configuration (travel_time) VALUES (%s)", [travel_time]
@@ -638,6 +639,10 @@ def create_configuration(request):
                 "INSERT INTO Preferred_Start_Times (config_id, times) VALUES (%s, %s)",
                 [config_id, t],
             )
+        cursor.execute(
+            "INSERT INTO Configured_by (config_id, fid) VALUES (%s, %s)",
+            [config_id, fid],
+        )
 
     return JsonResponse({"message": "Created", "config_id": config_id})
 
@@ -651,7 +656,7 @@ def update_configuration(request, config_id):
     travel_time = data.get("travel_time", 0)
     days = data.get("days", [])
     times = data.get("times", [])
-    fid = data.get("fid")
+    
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -674,10 +679,7 @@ def update_configuration(request, config_id):
                 "INSERT INTO Preferred_Start_Times (config_id, times) VALUES (%s, %s)",
                 [config_id, t],
             )
-        cursor.execute(
-            "INSERT INTO Configured_by (config_id, fid) VALUES (%s, %s)",
-            [config_id, fid],
-        )
+        
 
     return JsonResponse({"message": "Updated"})
 
