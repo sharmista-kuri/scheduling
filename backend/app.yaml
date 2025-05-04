@@ -1,0 +1,13 @@
+runtime: python311  # or python310 if you prefer
+entrypoint: gunicorn CourseSchedulerBackend.wsgi
+
+env_variables:
+  DJANGO_SETTINGS_MODULE: "CourseSchedulerBackend.settings"
+  SECRET_KEY: "django-insecure-&(h#!%1&#nh)8z_olbagi-eu@hz@=xhllo6$a&k0f4zz7!)8(^"
+  # Optional: add DB vars like DB_USER, DB_PASSWORD, etc.
+
+handlers:
+  - url: /static
+    static_dir: static/
+  - url: /.*
+    script: auto
