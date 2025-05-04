@@ -32,7 +32,7 @@ def build_course_objects(csv_path: str) -> List[Course]:
         for row in rdr:
             crn = int(row[0].strip())
             code = row[1].strip()
-            faculty_name = row[2].strip()
+            faculty_name = row[2].split(".")[0].strip()
 
             # Look up fid; default to None (upsert_courses will insert Faculty if missing)
             fid = fid_map.get(faculty_name)
