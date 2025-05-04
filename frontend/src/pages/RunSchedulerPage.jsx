@@ -12,8 +12,9 @@ const RunSchedulerPage = () => {
     try {
       const res = await axios.post(`${baseURL}/run-scheduler/`);
       if (res.data.success) {
+        // console.log(res.data.log);
         setCourses(res.data.courses);
-        setMessage("✅ Scheduling complete.");
+        setMessage("✅ Scheduling complete.\n" + res.data.log);
       } else {
         setMessage("❌ Failed: " + res.data.error);
       }
