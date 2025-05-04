@@ -8,6 +8,7 @@ from django.contrib.auth.hashers import check_password
 from django.contrib.auth.hashers import make_password
 from algorithm import generate_conflict_numbers, schedule_courses
 from django.core.files.storage import default_storage
+from django.core.management import call_command
 from import_csv import *
 from django.db import connection
 from time_conversion import time_int2str
@@ -31,6 +32,21 @@ from database_requests import (
     save_configuration,
     load_possible_times,
 )
+
+
+import io
+
+@csrf_exempt
+def reset_db_view(request):
+    if request.method != "POST":
+        return JsonResponse({"success": False, "error": "Only POST allowed"}, status=405)
+
+    try:
+        out = io.StringIO()  # capture output
+        call_command('reset_db', stdout=out)  # 'resetdb' is the name of your command file
+        return JsonResponse({"success": True, "message": "Database reset successful", "log": out.getvalue()})
+    except Exception as e:
+        return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
 @csrf_exempt

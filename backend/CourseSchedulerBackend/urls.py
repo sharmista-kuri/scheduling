@@ -18,6 +18,7 @@ urlpatterns = [
     path("api/admin/total_counts/", views.total_counts),
     path("api/faculty/<int:fid>/courses/", views.courses_by_faculty),
     path("api/upload_csv/", views.upload_csv_view),
+    path("api/reset-db/", views.reset_db_view),
     # ---------- Faculty ----------
     path("api/faculty/", views.faculty_list_view),
     path("api/faculty/create/", views.faculty_create_view),
