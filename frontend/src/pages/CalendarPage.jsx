@@ -52,11 +52,15 @@ const timeSlots = Array.from({ length: 52 }, (_, i) => {
 const CalendarPage = () => {
   const [courses, setCourses] = useState([]);
   const [filteredCourses, setFilteredCourses] = useState([]);
-  const [searchTerm, setSearchTerm] = useState('');
+  const [codeFilter, setCodeFilter] = useState('');
+  const [titleFilter, setTitleFilter] = useState('');
+  const [facultyFilter, setFacultyFilter] = useState('');
   const [selectedCourse, setSelectedCourse] = useState(null);
   const [loading, setLoading] = useState(false);
 
   const baseURL = process.env.REACT_APP_API_BASE_URL;
+  const authLevel = localStorage.getItem('auth_level');
+  const isAdmin = authLevel === 'admin';
 
   const fetchCourses = useCallback(() => {
     axios.get(`${baseURL}/courses/`)
@@ -71,18 +75,19 @@ const CalendarPage = () => {
     fetchCourses();
   }, [fetchCourses]);
 
+  // Live filtering on input change
   useEffect(() => {
     const filtered = courses.filter(course =>
-      course.course_code.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      course.course_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      (course.faculty_name && course.faculty_name.toLowerCase().includes(searchTerm.toLowerCase()))
+      course.course_code.toLowerCase().includes(codeFilter.toLowerCase()) &&
+      course.course_name.toLowerCase().includes(titleFilter.toLowerCase()) &&
+      (course.faculty_name || '').toLowerCase().includes(facultyFilter.toLowerCase())
     );
     setFilteredCourses(filtered);
-  }, [searchTerm, courses]);
+  }, [codeFilter, titleFilter, facultyFilter, courses]);
 
   const handleReload = () => {
     setLoading(true);
-    fetch(`${baseURL}/courses/reload_schedule.php`) 
+    fetch(`${baseURL}/courses`)
       .then(res => res.json())
       .then(data => {
         console.log('Schedule reload triggered:', data);
@@ -98,31 +103,49 @@ const CalendarPage = () => {
     <>
       <Navbar />
       <div style={{ padding: '20px' }}>
-        <div className="d-flex mb-3 gap-2 align-items-center">
+        <div className="d-flex mb-3 gap-2 align-items-center flex-wrap">
           <input
             type="text"
             className="form-control"
-            style={{ maxWidth: '300px', fontSize: '14px', padding: '6px 10px' }}
-            placeholder="🔍 Filter by course, name, or faculty"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
+            style={{ maxWidth: '160px', fontSize: '14px', padding: '6px 10px' }}
+            placeholder="Course Code"
+            value={codeFilter}
+            onChange={(e) => setCodeFilter(e.target.value)}
+          />
+          <input
+            type="text"
+            className="form-control"
+            style={{ maxWidth: '160px', fontSize: '14px', padding: '6px 10px' }}
+            placeholder="Course Title"
+            value={titleFilter}
+            onChange={(e) => setTitleFilter(e.target.value)}
+          />
+          <input
+            type="text"
+            className="form-control"
+            style={{ maxWidth: '160px', fontSize: '14px', padding: '6px 10px' }}
+            placeholder="Faculty Name"
+            value={facultyFilter}
+            onChange={(e) => setFacultyFilter(e.target.value)}
           />
 
-          <button
-            className="btn btn-outline-primary d-flex align-items-center gap-2"
-            style={{ fontSize: '13px', padding: '6px 10px' }}
-            onClick={handleReload}
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
-                Loading...
-              </>
-            ) : (
-              <>🔄 Refresh Schedule</>
-            )}
-          </button>
+          {isAdmin && (
+            <button
+              className="btn btn-outline-primary d-flex align-items-center gap-2"
+              style={{ fontSize: '13px', padding: '6px 10px' }}
+              onClick={handleReload}
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <span className="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>
+                  Loading...
+                </>
+              ) : (
+                <>🔄 Refresh Schedule</>
+              )}
+            </button>
+          )}
         </div>
 
         <div className="calendar-container border rounded p-3 shadow bg-light">
@@ -188,17 +211,6 @@ const CalendarPage = () => {
                     <div style={{ fontSize: '11px' }}>{course.course_name}</div>
 
                     <div className="d-flex align-items-center mt-1">
-                      {/* <img
-                        src={course.faculty_pic || `${process.env.REACT_APP_API_BASE_URL}/profile.png`}
-                        alt="faculty"
-                        style={{
-                          width: '20px',
-                          height: '20px',
-                          borderRadius: '50%',
-                          objectFit: 'cover',
-                          marginRight: '5px'
-                        }}
-                      /> */}
                       <span style={{ fontSize: '11px' }}>{course.faculty_name}</span>
                     </div>
                   </div>

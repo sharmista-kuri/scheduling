@@ -7,12 +7,14 @@ const AddFacultyModal = ({ editData, onClose, onFacultyAdded }) => {
   const [authLevel, setAuthLevel] = useState('faculty');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [message, setMessage] = useState('');
   const [messageType, setMessageType] = useState('');
 
+  const isEditing = !!editData;
 
   useEffect(() => {
-    if (editData) {
+    if (isEditing) {
       setName(editData.NAME);
       setAuthLevel(editData.auth_level);
       setEmail(editData.email);
@@ -24,12 +26,16 @@ const AddFacultyModal = ({ editData, onClose, onFacultyAdded }) => {
     const baseURL = process.env.REACT_APP_API_BASE_URL;
 
     try {
-      if (editData) {
-        await axios.post(`${baseURL}/faculty/${editData.fid}/update_all/`, {
+      if (isEditing) {
+        const updateData = {
           name,
           auth_level: authLevel,
           email,
-        });
+        };
+        if (password.trim()) {
+          updateData.password = password;
+        }
+        await axios.post(`${baseURL}/faculty/${editData.fid}/update_all/`, updateData);
       } else {
         await axios.post(`${baseURL}/faculty/create/`, {
           name,
@@ -38,20 +44,27 @@ const AddFacultyModal = ({ editData, onClose, onFacultyAdded }) => {
           password,
         });
       }
-      onFacultyAdded();
-      onClose();
+
+      setMessage(isEditing ? '✅ Faculty account updated successfully!' : '✅ Faculty account created successfully!');
+      setMessageType('success');
+
+      // Wait 1.5 seconds to show the success message before closing
+      setTimeout(() => {
+        onFacultyAdded();
+        onClose();
+      }, 4500);
     } catch (err) {
       console.error('Error saving faculty:', err);
       setMessage('❌ Failed to save faculty.');
       setMessageType('error');
-
     }
   };
 
   return (
     <div className="modal-overlay">
       <div className="modal-box">
-        <h4>{editData ? 'Edit Faculty' : 'Add New Faculty'}</h4>
+        <h4>{isEditing ? 'Update Faculty Account' : 'Create Faculty Account'}</h4>
+
         {message && (
           <div className={`alert ${messageType === 'success' ? 'alert-success' : 'alert-danger'}`} role="alert">
             {message}
@@ -69,6 +82,7 @@ const AddFacultyModal = ({ editData, onClose, onFacultyAdded }) => {
               required
             />
           </div>
+
           <div className="mb-3">
             <label>Email</label>
             <input
@@ -77,9 +91,10 @@ const AddFacultyModal = ({ editData, onClose, onFacultyAdded }) => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              disabled={!!editData}
+              disabled={isEditing}
             />
           </div>
+
           <div className="mb-3">
             <label>Auth Level</label>
             <select
@@ -94,21 +109,31 @@ const AddFacultyModal = ({ editData, onClose, onFacultyAdded }) => {
             </select>
           </div>
 
-          {!editData && (
-            <div className="mb-3">
-              <label>Password</label>
+          <div className="mb-3">
+            <label>{isEditing ? 'Change Password (optional)' : 'Set Password'}</label>
+            <div className="input-group">
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 className="form-control"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                required
+                placeholder={isEditing ? 'Leave blank to keep current password' : ''}
+                {...(!isEditing && { required: true })}
               />
+              <button
+                type="button"
+                className="btn btn-outline-secondary"
+                onClick={() => setShowPassword(!showPassword)}
+                style={{ fontSize: '1.2rem' }}
+              >
+                {showPassword ? '🙈' : '👁️'}
+              </button>
             </div>
-          )}
+          </div>
+
           <div className="d-flex justify-content-end">
             <button type="submit" className="btn btn-primary me-2">
-              {editData ? 'Update' : 'Add'}
+              {isEditing ? 'Update' : 'Create'}
             </button>
             <button type="button" className="btn btn-secondary" onClick={onClose}>
               Cancel

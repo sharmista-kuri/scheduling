@@ -130,8 +130,12 @@ def create_course(payload: Dict[str, Any]) -> int:
         )
         crn = payload["crn"]
         # Course_Days
-        for d in payload["days"]:
-            cur.execute("INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, d))
+        # for d in payload["days"]:
+        #     cur.execute("INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, d))
+
+        days_str = ",".join(payload.get("days", []))
+        cur.execute("INSERT INTO Course_Days (CRN, days) VALUES (%s, %s);", (crn, days_str))
+
         # Prereqs
         # print("[DEBUG] delete request body:", payload["course_code"])
         # Resolve prereq CRNs to course codes

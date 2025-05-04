@@ -40,7 +40,7 @@ def upload_csv_view(request):
         csv_path = os.path.join(default_storage.location, path)
 
         try:
-            main(csv_path)  # ✅ Reuse existing logic
+            main(csv_path)  
             return JsonResponse(
                 {"success": True, "message": "CSV uploaded and processed."}
             )

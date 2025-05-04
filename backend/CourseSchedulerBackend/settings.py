@@ -74,6 +74,10 @@ TEMPLATES = [
 #     "http://localhost:3000",  # React dev server
 # ]
 
+ALLOWED_HOSTS = ['*']
+
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')  # if not already set
+
 CORS_ALLOW_ALL_ORIGINS = True  # 🚨 Only for testing!
 
 
@@ -92,8 +96,30 @@ DATABASES = {
         "PASSWORD": config("MYSQL_PWD", default=""),
         "HOST": "127.0.0.1",
         "PORT": "3306",
+        'OPTIONS': {
+            'charset': 'utf8mb4',
+            'init_command': "SET NAMES 'utf8mb4'"
+        }
     }
 }
+
+
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'course_scheduling_db',
+#         'USER': 'root',
+#         'PASSWORD': 'csi',
+#         'HOST': '34.123.165.52',
+#         'PORT': '3306',
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',
+#             'init_command': "SET NAMES 'utf8mb4'"
+#         }
+#     }
+# }
+
+
 
 # Password validation
 # https://docs.djangoproject.com/en/4.2/ref/settings/#auth-password-validators
