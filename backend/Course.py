@@ -33,7 +33,7 @@ class Course:
             self.end_time = end_time
 
         if days != None:
-            self.days = days.split(",")
+            self.days = [] if not days else (days if isinstance(days, list) else days.split(","))
         else:
             self.days = days or []
         self.fid = fid

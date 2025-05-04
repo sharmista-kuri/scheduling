@@ -130,8 +130,9 @@ def create_course(payload: Dict[str, Any]) -> int:
         )
         crn = payload["crn"]
         # Course_Days
-        for d in payload["days"]:
-            cur.execute("INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, d))
+        days_str = ",".join(payload.get("days", []))
+        cur.execute("INSERT INTO Course_Days (CRN, days) VALUES (%s, %s);", (crn, days_str))
+
         # Prereqs
         # print("[DEBUG] delete request body:", payload["course_code"])
         # Resolve prereq CRNs to course codes
@@ -185,8 +186,13 @@ def list_courses():
 def get_course_relations(crn: int):
     out = {"prereqs": [], "coreqs": []}
     with _get_connection().cursor() as cur:
-        cur.execute("SELECT CRN2 FROM Coreqs WHERE CRN1=%s;", (crn,))
+        cur.execute("""
+            SELECT CRN2 FROM Coreqs WHERE CRN1 = %s
+            UNION
+            SELECT CRN1 FROM Coreqs WHERE CRN2 = %s;
+        """, (crn, crn))
         out["coreqs"] = [x[0] for x in cur.fetchall()]
+
         cur.execute(
             """
             SELECT prereq.CRN
