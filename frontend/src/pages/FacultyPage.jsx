@@ -8,12 +8,17 @@ import Navbar from '../components/Navbar';
 const FacultyPage = () => {
   const [facultyList, setFacultyList] = useState([]);
   const [filteredFaculty, setFilteredFaculty] = useState([]);
+  const [paginatedFaculty, setPaginatedFaculty] = useState([]);
   const [sortConfig, setSortConfig] = useState({ key: '', direction: 'asc' });
   const [filters, setFilters] = useState({
     name: '',
     email: '',
     auth: '',
   });
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [pageSize, setPageSize] = useState(5);
+  const [totalPages, setTotalPages] = useState(1);
 
   const [showModal, setShowModal] = useState(false);
   const [editFaculty, setEditFaculty] = useState(null);
@@ -52,7 +57,11 @@ const FacultyPage = () => {
     }
 
     setFilteredFaculty(filtered);
-  }, [facultyList, filters, sortConfig]);
+    setTotalPages(Math.ceil(filtered.length / pageSize));
+    const startIndex = (currentPage - 1) * pageSize;
+    const paginated = filtered.slice(startIndex, startIndex + pageSize);
+    setPaginatedFaculty(paginated);
+  }, [facultyList, filters, sortConfig, currentPage, pageSize]);
 
   const handleSort = (key) => {
     setSortConfig((prev) => {
@@ -114,7 +123,10 @@ const FacultyPage = () => {
               className="form-control"
               placeholder="Filter by Name"
               value={filters.name}
-              onChange={(e) => setFilters({ ...filters, name: e.target.value })}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setFilters({ ...filters, name: e.target.value });
+              }}
             />
           </div>
           <div className="col">
@@ -123,7 +135,10 @@ const FacultyPage = () => {
               className="form-control"
               placeholder="Filter by Email"
               value={filters.email}
-              onChange={(e) => setFilters({ ...filters, email: e.target.value })}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setFilters({ ...filters, email: e.target.value });
+              }}
             />
           </div>
           <div className="col">
@@ -132,19 +147,57 @@ const FacultyPage = () => {
               className="form-control"
               placeholder="Filter by Auth Level"
               value={filters.auth}
-              onChange={(e) => setFilters({ ...filters, auth: e.target.value })}
+              onChange={(e) => {
+                setCurrentPage(1);
+                setFilters({ ...filters, auth: e.target.value });
+              }}
             />
           </div>
         </div>
 
+        {/* Table */}
         <FacultyTable
-          facultyList={filteredFaculty}
+          facultyList={paginatedFaculty}
           onEdit={handleEdit}
           onDelete={handleDelete}
           onSort={handleSort}
           sortConfig={sortConfig}
         />
 
+        {/* Pagination Controls */}
+        <div className="d-flex justify-content-center align-items-center mt-4">
+          <nav>
+            <ul className="pagination">
+              <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(prev => prev - 1)} disabled={currentPage === 1}>
+                  ⬅ Prev
+                </button>
+              </li>
+
+              {[...Array(totalPages)].map((_, idx) => (
+                <li
+                  key={idx + 1}
+                  className={`page-item ${currentPage === idx + 1 ? 'active' : ''}`}
+                >
+                  <button
+                    className="page-link"
+                    onClick={() => setCurrentPage(idx + 1)}
+                  >
+                    {idx + 1}
+                  </button>
+                </li>
+              ))}
+
+              <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+                <button className="page-link" onClick={() => setCurrentPage(prev => prev + 1)} disabled={currentPage === totalPages}>
+                  Next ➡
+                </button>
+              </li>
+            </ul>
+          </nav>
+        </div>
+
+        {/* Modal */}
         {showModal && (
           <AddFacultyModal
             editData={editFaculty}

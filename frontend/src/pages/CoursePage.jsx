@@ -29,7 +29,6 @@ const CoursePage = () => {
     try {
       const baseURL = process.env.REACT_APP_API_BASE_URL;
       const res = await axios.get(`${baseURL}/courses/`);
-      console.log("Fetched courses:", res.data);
       setCourses(res.data);
     } catch (err) {
       console.error('Error fetching courses:', err);
@@ -64,7 +63,7 @@ const CoursePage = () => {
     }
 
     setFilteredCourses(filtered);
-    setCurrentPage(1); // reset page when filters/sort change
+    setCurrentPage(1); // reset to page 1 when filters/sort change
   }, [courses, filters, sortConfig]);
 
   const handleSort = (key) => {
@@ -191,18 +190,30 @@ const CoursePage = () => {
         />
 
         {/* Pagination */}
-        <div className="d-flex justify-content-center mt-3">
+        <div className="d-flex justify-content-center mt-4">
           <ul className="pagination">
+            <li className={`page-item ${currentPage === 1 ? 'disabled' : ''}`}>
+              <button className="page-link" onClick={() => setCurrentPage(currentPage - 1)} disabled={currentPage === 1}>
+                ⬅ Prev
+              </button>
+            </li>
+
             {[...Array(totalPages)].map((_, i) => (
               <li
                 key={i}
                 className={`page-item ${currentPage === i + 1 ? 'active' : ''}`}
-                style={{ cursor: 'pointer' }}
-                onClick={() => setCurrentPage(i + 1)}
               >
-                <span className="page-link">{i + 1}</span>
+                <button className="page-link" onClick={() => setCurrentPage(i + 1)}>
+                  {i + 1}
+                </button>
               </li>
             ))}
+
+            <li className={`page-item ${currentPage === totalPages ? 'disabled' : ''}`}>
+              <button className="page-link" onClick={() => setCurrentPage(currentPage + 1)} disabled={currentPage === totalPages}>
+                Next ➡
+              </button>
+            </li>
           </ul>
         </div>
 
