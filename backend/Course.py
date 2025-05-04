@@ -12,27 +12,34 @@ class Course:
         start_time=None,
         end_time=None,
         days=[],
-        faculty=None,
+        fid=None,
         prereqs=[],
         coreqs=[],
+        faculty_name="",
     ):
         self.crn = crn
         self.course_code = course_code
         self.conflict_numbers = set()
         self.is_pinned = is_pinned
         self.duration = duration
-        if start_time != None:
+        if start_time != None and type(start_time) == str:
             self.start_time = time_str2int(start_time)
         else:
             self.start_time = start_time
-        if end_time != None:
+
+        if end_time != None and type(end_time) == str:
             self.end_time = time_str2int(end_time)
         else:
             self.end_time = end_time
-        self.days = days
-        self.faculty = faculty
+
+        if days != None:
+            self.days = days.split(",")
+        else:
+            self.days = days
+        self.fid = fid
         self.prereqs = prereqs
         self.coreqs = coreqs
+        self.faculty_name = faculty_name
 
     def schedule_course(self, days, time):
         self.days = days
@@ -40,9 +47,10 @@ class Course:
         self.end_time = time + self.duration
 
     def __repr__(self):
-        # return f"(CRN: {self.crn} Course_Code: {self.course_code} Pinned: {self.is_pinned})"
+        # return f"(CRN: {self.crn} Course_Code: {self.course_code} Pinned: {self.is_pinned}\n)"
         # return f"{self.crn}, {self.conflict_numbers}\n"
         return f"{'-'*30}\n{self.crn}   {self.days}: {time_int2str(self.start_time)} - {time_int2str(self.end_time)}\n{self.conflict_numbers}\n{'-'*30}\n"
+        # return f"{self.crn}"
 
 
 def get_course_map(all_courses):
@@ -58,13 +66,14 @@ def get_course_map(all_courses):
     crn_map = {}
     for course in all_courses:
         course_object = Course(
-            crn=course[0],
-            course_code=course[1],
-            is_pinned=course[2],
-            duration=course[3],
-            start_time=course[4],
-            end_time=course[5],
-            days=course[6],
+            crn=course["CRN"],
+            course_code=course["course_code"],
+            is_pinned=True if course["is_pinned"] == 1 else False,
+            duration=course["duration"],
+            start_time=course["start_time"],
+            end_time=course["end_time"],
+            days=course["days"],
+            fid=course["faculty_id"],
         )
         # Add object to code map
         if course_object.course_code not in code_map:

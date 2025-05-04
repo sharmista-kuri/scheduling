@@ -137,10 +137,10 @@ def create_course(payload: Dict[str, Any]) -> int:
         # Resolve prereq CRNs to course codes
         crn_to_code = {}
         if payload.get("prereqs"):
-            format_strings = ','.join(['%s'] * len(payload["prereqs"]))
+            format_strings = ",".join(["%s"] * len(payload["prereqs"]))
             cur.execute(
                 f"SELECT CRN, course_code FROM Course WHERE CRN IN ({format_strings})",
-                payload["prereqs"]
+                payload["prereqs"],
             )
             crn_to_code = {row[0]: row[1] for row in cur.fetchall()}
 
@@ -154,7 +154,7 @@ def create_course(payload: Dict[str, Any]) -> int:
                 )
 
         # Coreqs
-        
+
         for c in payload.get("coreqs", []):
             print("[DEBUG] Trying to insert coreq:", crn, c)
             cur.execute("INSERT INTO Coreqs (CRN1,CRN2) VALUES (%s,%s);", (crn, c))
@@ -201,6 +201,30 @@ def get_course_relations(crn: int):
     return out
 
 
+def get_prereq_table():
+    with _get_connection().cursor() as cur:
+        cur.execute(
+            """
+            SELECT *
+            FROM Prereqs
+            """,
+        )
+        out = cur.fetchall()
+    return out
+
+
+def get_coreq_table():
+    with _get_connection().cursor() as cur:
+        cur.execute(
+            """
+            SELECT *
+            FROM Coreqs
+            """,
+        )
+        out = cur.fetchall()
+    return out
+
+
 def update_course(crn: int, patch: Dict[str, Any]):
     # print(f"[DEBUG] Updating course {crn} with patch: {patch}")
     fields, params = [], []
@@ -231,9 +255,8 @@ def update_course(crn: int, patch: Dict[str, Any]):
             days_str = ",".join(patch.get("days", []))
             days_str = days_str.lstrip(",")  # ✅ removes any leading comma
             cur.execute(
-                    "INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, days_str)
-                )
-
+                "INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);", (crn, days_str)
+            )
 
         # Prereqs
         if "prereqs" in patch:
@@ -241,12 +264,12 @@ def update_course(crn: int, patch: Dict[str, Any]):
                 "SELECT course_code FROM Course WHERE CRN=%s;",
                 (crn,),
             )
-            code = (
-                patch.get("course_code") or cur.fetchone()[0]
-            )  
+            code = patch.get("course_code") or cur.fetchone()[0]
             cur.execute("DELETE FROM Prereqs WHERE course_code=%s;", (code,))
             for crn_value in patch["prereqs"]:
-                cur.execute("SELECT course_code FROM Course WHERE CRN=%s;", (crn_value,))
+                cur.execute(
+                    "SELECT course_code FROM Course WHERE CRN=%s;", (crn_value,)
+                )
                 prereq_code_row = cur.fetchone()
                 if prereq_code_row:  # only insert if valid
                     prereq_code = prereq_code_row[0]
@@ -348,11 +371,114 @@ def load_possible_times():
         if exists:
             cur.execute("SELECT DayPattern, Start_Time FROM PossibleTimes;")
             rows = cur.fetchall()
-            return [
-                (r[0].split("."), time_str2int(str(r[1])))
-                for r in rows
-            ]
+            return [(r[0].split("."), time_str2int(str(r[1]))) for r in rows]
 
     start, end, inc = time_str2int("8:00"), time_str2int("19:00"), 90
     patterns = [["M", "W"], ["T", "TH"]]
     return [(p, t) for t in range(start, end + 1, inc) for p in patterns]
+
+
+# LOAD IN TEST DUMMY DATA TO DB
+def upload_dummy_data():
+
+    test_teaches = ["A", "B", "C", "D", "E", "F"]
+
+    test_courses_list = [
+        ("1111", "111", False, 80, None, None, None, "A"),
+        ("2222", "222", False, 80, None, None, None, "A"),
+        ("2002", "222", False, 170, None, None, None, "B"),
+        ("2112", "222", False, 80, None, None, None, "D"),
+        ("3003", "333", False, 170, None, None, None, "F"),
+        ("3333", "333", False, 80, None, None, None, "C"),
+        ("4444", "444", False, 80, None, None, None, "D"),
+        ("5555", "555", False, 80, None, None, None, "C"),
+        ("6666", "666", True, 80, "9:30", "10:50", ["M", "W"], "B"),
+        ("7777", "777", False, 80, None, None, None, "D"),
+        ("7007", "777", False, 170, None, None, None, "E"),
+        ("8888", "888", True, 80, "8:00", "9:20", ["T", "TH"], "E"),
+        ("9999", "999", False, 80, None, None, None, "B"),
+    ]
+
+    test_prereq_list = [
+        ("111", "222"),
+        ("222", "444"),
+        ("333", "444"),
+        ("333", "999"),
+        ("444", "555"),
+        ("444", "666"),
+        ("555", "777"),
+        ("555", "888"),
+        ("666", "888"),
+    ]
+
+    test_coreqs = [
+        ("2222", "2002"),
+        ("2112", "2002"),
+        ("2222", "2112"),
+        ("3333", "3003"),
+        ("7777", "7007"),
+    ]
+
+    teacher_id = {"A": 68, "B": 69, "C": 70, "D": 71, "E": 72, "F": 73}
+
+    # with _get_connection().cursor() as cur:
+    #     for teacher in test_teaches:
+    #         cur.execute(
+    #             """
+    #             INSERT INTO Faculty (NAME)
+    #             VALUES (%s)
+    #             """,
+    #             (teacher),
+    #         )
+
+    # with _get_connection().cursor() as cur:
+    #     for course in test_courses_list:
+    #         cur.execute(
+    #             """
+    #             INSERT INTO Course (CRN,course_code,is_pinned,duration,start_time,end_time,fid)
+    #             VALUES (%s,%s,%s,%s,%s,%s,%s)
+    #             """,
+    #             (
+    #                 course[0],
+    #                 course[1],
+    #                 course[2],
+    #                 course[3],
+    #                 course[4],
+    #                 course[5],
+    #                 teacher_id[course[-1]],
+    #             ),
+    #         )
+
+    # with _get_connection().cursor() as cur:
+    #     for prereq in test_prereq_list:
+    #         cur.execute(
+    #             """
+    #             INSERT INTO Prereqs (prereq_course_code,course_code)
+    #             VALUES (%s,%s)
+    #             """,
+    #             (
+    #                 prereq[0],
+    #                 prereq[1],
+    #             ),
+    #         )
+
+    # with _get_connection().cursor() as cur:
+    #     for prereq in test_coreqs:
+    #         cur.execute(
+    #             """
+    #             INSERT INTO Coreqs (CRN1,CRN2)
+    #             VALUES (%s,%s)
+    #             """,
+    #             (
+    #                 prereq[0],
+    #                 prereq[1],
+    #             ),
+    #         )
+
+    # with _get_connection().cursor() as cur:
+    #     for prereq in test_coreqs:
+    #         cur.execute(
+    #             """
+    #             UPDATE Course SET NAME=CRN
+    #             """,
+    #         )

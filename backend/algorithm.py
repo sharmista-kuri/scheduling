@@ -2,6 +2,7 @@ from database_requests import *
 from time_conversion import *
 from graph import *
 from Course import *
+from import_csv import *
 
 
 def group_coreqs(coreq_list):
@@ -36,6 +37,24 @@ def group_coreqs(coreq_list):
     return list(groupings.values())
 
 
+def group_faculty(courses):
+    """
+    Input: List of courses
+
+    Output: List of lists where each list contains courses with the same faculty
+    """
+    # Hashmap of current groupings
+    groupings = {}
+
+    for crn, course in courses.items():
+        if course.fid not in groupings:
+            groupings[course.fid] = []
+        groupings[course.fid].append(course)
+
+    # Return just the lists of grouped values
+    return list(groupings.values())
+
+
 def generate_conflict_numbers():
     """
     Step 1 of the algorithm, will generate all the conflict numbers to be used for scheduling. Returns list of course objects with populated conflict_numbers.
@@ -44,10 +63,10 @@ def generate_conflict_numbers():
     current_conflict_number = 0
     # Load in all courses and create a hashmap mapping from course_code to list of Course objects with crn's corresponding to that code
     # Load all course tuples from database
-    all_courses = load_all_courses()
+    all_courses = list_courses()
     code_object_map, crn_object_map = get_course_map(all_courses)
     # Get the prereq information for generating graphs
-    prereq_list = get_prereq_list()
+    prereq_list = get_prereq_table()
     # Generate the graphs for both directions
     backward_graph = generate_graph(prereq_list)
     forward_graph = reverse_graph(backward_graph)
@@ -87,19 +106,19 @@ def generate_conflict_numbers():
     # STEP 1 PART 2: FACULTY GROUPING
 
     # Load in the courses taught grouped by faculty teaching the course
-    faculty_groups = load_teaches()
+    faculty_groups = group_faculty(crn_object_map)
     # Data is preformatted for faculty, simply add entire list to same group
-    for faculty, courses in faculty_groups.items():
-        for course in courses:
-            crn_object_map[course].conflict_numbers.add(current_conflict_number)
+    for group in faculty_groups:
+        for course in group:
+            course.conflict_numbers.add(current_conflict_number)
         current_conflict_number += 1
 
     # STEP 1 PART 3: COREQ MERGING
 
     # Load in all coreq data
-    coreq_data = get_coreq_list()
+    coreq_list = get_coreq_table()
     # Merge CRN's into groups based on all courses that share a coreq
-    coreq_groups = group_coreqs(coreq_data)
+    coreq_groups = group_coreqs(coreq_list)
 
     for group in coreq_groups:
         # Set to construct new conflict lists
@@ -183,6 +202,8 @@ def schedule_courses(course_list):
         course_copy.append(course)
     conflict_table = {"M": {}, "T": {}, "W": {}, "TH": {}, "F": {}}
 
+    output_log = ""
+
     possible_times = load_possible_times()
 
     # TODO: Load in travel_time from DB
@@ -197,7 +218,9 @@ def schedule_courses(course_list):
 
         # Check for potential pinned course overlap
         if is_conflict_overlap(course, course.start_time, course.days, travel_time):
-            print("Error: Pinned course produces overlap conflict, course scheduled")
+            output_log += (
+                "Error: Pinned course produces overlap conflict, course scheduled\n"
+            )
         # Update the conflict table
         for day in course.days:
             conflict_table_update(
@@ -235,17 +258,39 @@ def schedule_courses(course_list):
                 break
 
             if not scheduled:
-                print(f"Error scheduling {course.crn}")
+                output_log += f"Error scheduling {course.crn}\n"
             course_list.remove(course)
         overlap_allowed += 1
 
     # print(conflict_table)
     # print(course_list)
-    for course in course_copy:
-        print(course)
+
+    # for course in course_copy:
+    #     output_log += str(course)
+
+    update_db(course_copy)
+    # upsert_courses(course_copy)
+
+    return output_log, course_copy
+
+
+def update_db(courses):
+    for course in courses:
+        patch = {}
+        # UNCOMMENT ME FOR BUG
+        # patch = {"days": course.days}
+        update_course(course, patch)
+
+
+def generate_schedule():
+    course_list = generate_conflict_numbers()
+    schedule_courses(course_list)
 
 
 if __name__ == "__main__":
     # main()
-    course_list = generate_conflict_numbers()
-    schedule_courses(course_list)
+    generate_schedule()
+    # courses = list_courses()
+    # crn_map, _ = get_course_map(courses)
+    # # upload_dummy_data()
+    # print(group_faculty(crn_map))

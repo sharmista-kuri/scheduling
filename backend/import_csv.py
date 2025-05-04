@@ -13,44 +13,46 @@ def _get_connection():
 
 
 # ---------------------------------------------------------------------------#
-#  0.  Build Course objects from registrar CSV 
+#  0.  Build Course objects from registrar CSV
 # ---------------------------------------------------------------------------#
 
-def build_course_objects(csv_path: str) -> List[Course]: # I will update this method later as per the CSV dataset #
 
-    def _safe_int(val, default=0):
-        try:
-            return int(float(str(val).strip()))
-        except (ValueError, TypeError):
-            return default
+def build_course_objects(csv_path: str) -> List[Course]:
+    # 1. Build a faculty‑name ➜ fid map once
+    with _get_connection().cursor() as cur:
+        cur.execute("SELECT fid, NAME FROM Faculty;")
+        fid_map = {name: fid for fid, name in cur.fetchall()}
 
     courses: List[Course] = []
 
     with open(csv_path, newline="") as fh:
         rdr = csv.reader(fh)
-        next(rdr)                        # skip header row
+        next(rdr)  # skip header row
 
         for row in rdr:
-            crn         = _safe_int(row[0])
-            code        = row[1].strip()
-            faculty     = row[3].strip()
+            crn = int(row[0].strip())
+            code = row[1].strip()
+            faculty_name = row[2].strip()
 
-            duration    = _safe_int(row[4])         
-            start_time  = row[7].strip() or None
-            end_time    = row[8].strip() or None
-            is_pinned   = 1 if row[6].strip().lower() in {"yes", "y", "1", "true"} else 0
+            # Look up fid; default to None (upsert_courses will insert Faculty if missing)
+            fid = fid_map.get(faculty_name)
 
-            c = Course(crn=crn, course_code=code)    # Course expects both args
-            c.faculty_name = faculty                
-            c.duration     = duration
-            c.start_time   = start_time
-            c.end_time     = end_time
-            c.days         = []                   
-            c.is_pinned    = bool(is_pinned)
+            is_pinned = "FALSE"
+
+            c = Course(crn=crn, course_code=code)
+            c.fid = fid  # may be None
+            c.faculty_name = faculty_name  # needed by upsert_courses
+            c.NAME = faculty_name  # display name, matches schema
+            c.duration = 80  # default
+            c.start_time = None
+            c.end_time = None
+            c.days = []  # ignored for now
+            c.is_pinned = is_pinned
 
             courses.append(c)
 
     return courses
+
 
 # ---------------------------------------------------------------------------#
 #  1. Faculty
@@ -62,7 +64,8 @@ def upsert_faculty(faculty: List[Dict[str, Any]]):
     """
     if not faculty:
         return
-    conn = _get_connection(); cur = conn.cursor()
+    conn = _get_connection()
+    cur = conn.cursor()
     sql = """
         INSERT INTO Faculty (fid, NAME, auth_level, email, PASSWORD)
         VALUES (%s,%s,%s,%s,%s)
@@ -72,12 +75,22 @@ def upsert_faculty(faculty: List[Dict[str, Any]]):
             email = VALUES(email),
             PASSWORD = VALUES(PASSWORD)
     """
-    cur.executemany(sql, [
-        (f["fid"], f["name"], f.get("auth_level", "user"),
-         f["email"], f.get("password", ""))
-        for f in faculty
-    ])
-    conn.commit(); cur.close(); conn.close()
+    cur.executemany(
+        sql,
+        [
+            (
+                f["fid"],
+                f["name"],
+                f.get("auth_level", "user"),
+                f["email"],
+                f.get("password", ""),
+            )
+            for f in faculty
+        ],
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 # ---------------------------------------------------------------------------#
@@ -86,16 +99,25 @@ def upsert_faculty(faculty: List[Dict[str, Any]]):
 def upsert_courses(course_objs: List[Course]):
     if not course_objs:
         return
-    conn = _get_connection(); cur = conn.cursor()
+    conn = _get_connection()
+    cur = conn.cursor()
 
     # ensure Faculty rows exist (by name)
     for c in course_objs:
         cur.execute(
             "INSERT IGNORE INTO Faculty (NAME, auth_level, email) VALUES (%s,'user',%s);",
-            (c.faculty_name, f"{c.faculty_name.replace(' ','').lower()}@example.com")
+            (c.faculty_name, f"{c.faculty_name.replace(' ','').lower()}@example.com"),
         )
     cur.execute("SELECT fid, NAME FROM Faculty;")
     fid_map = {name: fid for fid, name in cur.fetchall()}
+
+    # Check if course exists, if so, update it. Otherwise, insert it
+    # for c in course_objs:
+    #     sql = """
+    #     SELECT CRN FROM Course WHERE CRN=%s;
+    #     """
+    #     data = c.crn
+    #     cur.execute(sql, data)
 
     sql = """
         INSERT INTO Course
@@ -112,8 +134,16 @@ def upsert_courses(course_objs: List[Course]):
          is_pinned   = VALUES(is_pinned)
     """
     data = [
-        (c.crn, c.course_code, fid_map[c.faculty_name], c.course_code,
-         c.duration, c.start_time, c.end_time, c.is_pinned)
+        (
+            c.crn,
+            c.course_code,
+            fid_map[c.faculty_name],
+            c.course_code,
+            c.duration,
+            c.start_time,
+            c.end_time,
+            c.is_pinned,
+        )
         for c in course_objs
     ]
     cur.executemany(sql, data)
@@ -122,10 +152,12 @@ def upsert_courses(course_objs: List[Course]):
     cur.execute("DELETE FROM Course_Days;")
     cur.executemany(
         "INSERT INTO Course_Days (CRN,days) VALUES (%s,%s);",
-        [(c.crn, d) for c in course_objs for d in c.days]
+        [(c.crn, d) for c in course_objs for d in c.days],
     )
 
-    conn.commit(); cur.close(); conn.close()
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 # ---------------------------------------------------------------------------#
@@ -133,13 +165,15 @@ def upsert_courses(course_objs: List[Course]):
 # ---------------------------------------------------------------------------#
 def upsert_conflict_no(rows: List[tuple]):
     if rows:
-        conn = _get_connection(); cur = conn.cursor()
+        conn = _get_connection()
+        cur = conn.cursor()
         cur.execute("TRUNCATE Conflict_no;")
         cur.executemany(
-            "INSERT INTO Conflict_no (course_code, conflict_no) VALUES (%s,%s);",
-            rows
+            "INSERT INTO Conflict_no (course_code, conflict_no) VALUES (%s,%s);", rows
         )
-        conn.commit(); cur.close(); conn.close()
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
 # ---------------------------------------------------------------------------#
@@ -147,10 +181,13 @@ def upsert_conflict_no(rows: List[tuple]):
 # ---------------------------------------------------------------------------#
 def upsert_coreqs(rows: List[tuple]):
     if rows:
-        conn = _get_connection(); cur = conn.cursor()
+        conn = _get_connection()
+        cur = conn.cursor()
         cur.execute("TRUNCATE Coreqs;")
         cur.executemany("INSERT INTO Coreqs (CRN1,CRN2) VALUES (%s,%s);", rows)
-        conn.commit(); cur.close(); conn.close()
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
 # ---------------------------------------------------------------------------#
@@ -158,13 +195,16 @@ def upsert_coreqs(rows: List[tuple]):
 # ---------------------------------------------------------------------------#
 def upsert_prereqs(rows: List[tuple]):
     if rows:
-        conn = _get_connection(); cur = conn.cursor()
+        conn = _get_connection()
+        cur = conn.cursor()
         cur.execute("TRUNCATE Prereqs;")
         cur.executemany(
             "INSERT INTO Prereqs (prereq_course_code, course_code) VALUES (%s,%s);",
-            rows
+            rows,
         )
-        conn.commit(); cur.close(); conn.close()
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
 # ---------------------------------------------------------------------------#
@@ -176,7 +216,8 @@ def upsert_comments(comments: List[Dict[str, Any]]):
     """
     if not comments:
         return
-    conn = _get_connection(); cur = conn.cursor()
+    conn = _get_connection()
+    cur = conn.cursor()
     sql = """
         INSERT INTO Comment (cid, CRN, fid, time_posted, comment_text)
         VALUES (%s,%s,%s,%s,%s)
@@ -184,11 +225,12 @@ def upsert_comments(comments: List[Dict[str, Any]]):
             comment_text = VALUES(comment_text),
             time_posted  = VALUES(time_posted)
     """
-    cur.executemany(sql, [
-        (c["cid"], c["CRN"], c["fid"], c["time"], c["text"])
-        for c in comments
-    ])
-    conn.commit(); cur.close(); conn.close()
+    cur.executemany(
+        sql, [(c["cid"], c["CRN"], c["fid"], c["time"], c["text"]) for c in comments]
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 # ---------------------------------------------------------------------------#
@@ -202,7 +244,8 @@ def upsert_configuration(cfg_rows: List[Dict[str, Any]]):
     """
     if not cfg_rows:
         return
-    conn = _get_connection(); cur = conn.cursor()
+    conn = _get_connection()
+    cur = conn.cursor()
 
     conf_sql = """
         INSERT INTO Configuration (config_id, travel_time)
@@ -210,7 +253,9 @@ def upsert_configuration(cfg_rows: List[Dict[str, Any]]):
         ON DUPLICATE KEY UPDATE travel_time = VALUES(travel_time)
     """
     pref_day_sql = "INSERT IGNORE INTO Preferred_Days (config_id,days) VALUES (%s,%s);"
-    pref_time_sql = "INSERT IGNORE INTO Preferred_Start_Times (config_id,times) VALUES (%s,%s);"
+    pref_time_sql = (
+        "INSERT IGNORE INTO Preferred_Start_Times (config_id,times) VALUES (%s,%s);"
+    )
     conf_by_sql = """
         INSERT IGNORE INTO Configured_by (config_id,fid) VALUES (%s,%s);
     """
@@ -223,19 +268,23 @@ def upsert_configuration(cfg_rows: List[Dict[str, Any]]):
             cur.execute(pref_time_sql, (row["config_id"], t))
         cur.execute(conf_by_sql, (row["config_id"], row["fid"]))
 
-    conn.commit(); cur.close(); conn.close()
+    conn.commit()
+    cur.close()
+    conn.close()
 
 
 # ---------------------------------------------------------------------------#
 #  Master seeder
 # ---------------------------------------------------------------------------#
-def main(csv_path: str,
-         prereqs: List[tuple] = None,
-         coreqs: List[tuple] = None,
-         conflict_rows: List[tuple] = None,
-         faculty_seed: List[Dict[str, Any]] = None,
-         comment_seed: List[Dict[str, Any]] = None,
-         config_seed: List[Dict[str, Any]] = None):
+def main(
+    csv_path: str,
+    prereqs: List[tuple] = None,
+    coreqs: List[tuple] = None,
+    conflict_rows: List[tuple] = None,
+    faculty_seed: List[Dict[str, Any]] = None,
+    comment_seed: List[Dict[str, Any]] = None,
+    config_seed: List[Dict[str, Any]] = None,
+):
     """Call with whatever starter data we have."""
     if faculty_seed:
         upsert_faculty(faculty_seed)
@@ -254,6 +303,7 @@ def main(csv_path: str,
 
 if __name__ == "__main__":
     import sys, json, pathlib
+
     if len(sys.argv) < 2:
         print("Usage: python import_csv.py <csv_path>")
         sys.exit(1)
