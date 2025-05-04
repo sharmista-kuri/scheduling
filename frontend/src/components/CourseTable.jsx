@@ -6,7 +6,7 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
     if (sortConfig.key !== key) return ' ⇅';
     return sortConfig.direction === 'asc' ? ' ▲' : ' ▼';
   };
-
+  const authLevel = localStorage.getItem("auth_level");
   const headerStyle = {
     backgroundColor: '#212529',
     color: '#ffffff',
@@ -15,12 +15,6 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
     userSelect: 'none',
   };
 
-  const formatTime = (timeStr) => {
-    const [hours, minutes, seconds] = timeStr.split(':').map(Number);
-    const date = new Date();
-    date.setHours(hours, minutes, seconds);
-    return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  };
 
   return (
     <table className="table table-bordered table-striped align-middle">
@@ -46,7 +40,14 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
             Duration <span>{getSortSymbol('duration')}</span>
           </th>
           <th style={headerStyle}>Pinned</th>
-          <th style={headerStyle}>Actions</th>
+          
+          
+          {authLevel === "admin" && (
+            <>
+            <th style={headerStyle}>Actions</th>
+            </>
+          )}
+              
         </tr>
       </thead>
       <tbody>
@@ -66,14 +67,20 @@ const CourseTable = ({ courses, onEdit, onDelete, onSort, sortConfig }) => {
                           {moment().startOf('day').add(course.end_time, 'minutes').format('h:mm A')}</td>
               <td>{course.duration} mins</td>
               <td>{course.is_pinned === 1 ? '✅' : '❌'}</td>
-              <td>
-                <button className="btn btn-sm btn-warning me-2" onClick={() => onEdit(course)}>
-                  Edit
-                </button>
-                <button className="btn btn-sm btn-danger" onClick={() => onDelete(course.CRN)}>
-                  Delete
-                </button>
-              </td>
+              
+              {authLevel === "admin" && (
+                <>
+                <td>
+                  <button className="btn btn-sm btn-warning me-2" onClick={() => onEdit(course)}>
+                    Edit
+                  </button>
+                  <button className="btn btn-sm btn-danger" onClick={() => onDelete(course.CRN)}>
+                    Delete
+                  </button>
+                </td>
+                </>
+              )}
+              
             </tr>
           ))
         )}

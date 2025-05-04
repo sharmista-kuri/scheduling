@@ -35,6 +35,7 @@ const FacultyDashboard = () => {
           // { title: 'Manage Faculty', link: '/admin/faculty' },
           // { title: 'Manage Courses', link: '/admin/courses' },
           // { title: 'Upload CSV', link: '/admin/courses' },
+          { title: 'View Courses', link: '/admin/courses' },
           { title: 'Update Profile', link: '/profile' },
           { title: 'Change Password', link: '/change_password' },
           { title: 'Calender', link: '/calendar' },

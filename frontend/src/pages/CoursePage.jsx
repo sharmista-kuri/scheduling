@@ -24,6 +24,8 @@ const CoursePage = () => {
   const [showModal, setShowModal] = useState(false);
   const [editCourse, setEditCourse] = useState(null);
   const [showCSVModal, setShowCSVModal] = useState(false);
+  const authLevel = localStorage.getItem("auth_level");
+
 
   const fetchCourses = async () => {
     try {
@@ -119,14 +121,18 @@ const CoursePage = () => {
       <div className="container mt-4">
         <div className="d-flex justify-content-between align-items-center mb-3">
           <h2>Course Table</h2>
-          <div>
-            <button className="btn btn-success me-2" onClick={() => setShowCSVModal(true)}>
-              Upload CSV
-            </button>
-            <button className="btn btn-primary" onClick={() => setShowModal(true)}>
-              + Add New Course
-            </button>
-          </div>
+          {authLevel === "admin" && (
+          <>
+            <div>
+              <button className="btn btn-success me-2" onClick={() => setShowCSVModal(true)}>
+                Upload CSV
+              </button>
+              <button className="btn btn-primary" onClick={() => setShowModal(true)}>
+                + Add New Course
+              </button>
+            </div>
+          </>
+          )}
         </div>
 
         {/* Filters */}

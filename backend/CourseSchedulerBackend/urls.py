@@ -45,5 +45,5 @@ urlpatterns = [
     path("api/configurations/", views.list_configurations),
     path("api/configurations/create/", views.create_configuration),
     path("api/configurations/<int:config_id>/", views.update_configuration),
-    path("api/configurations/<int:config_id>/", views.delete_configuration),
+    path("api/configurations/delete/<int:config_id>/", views.delete_configuration),
 ]

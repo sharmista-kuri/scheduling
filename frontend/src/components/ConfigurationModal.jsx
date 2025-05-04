@@ -43,10 +43,12 @@ const ConfigurationModal = ({ show, onClose, onSubmit, editData }) => {
   };
 
   const handleSubmit = () => {
+    const fid = localStorage.getItem("fid");
     onSubmit({
       travel_time: travelTime,
       days,
-      times
+      times,
+      fid: parseInt(fid),
     });
   };
 

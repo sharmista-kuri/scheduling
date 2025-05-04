@@ -40,7 +40,7 @@ const ConfigurationPage = () => {
 
   const handleDelete = async (id) => {
     try {
-      await axios.delete(`${baseURL}/configurations/${id}/`);
+      await axios.delete(`${baseURL}/configurations/delete/${id}/`);
       fetchConfigs();
     } catch (err) {
       console.error('Delete failed:', err);
