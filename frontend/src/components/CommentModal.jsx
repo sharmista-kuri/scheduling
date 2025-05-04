@@ -4,10 +4,7 @@ import './commentmodal.css';
 import { toast } from 'react-toastify';
 import EmojiPicker from 'emoji-picker-react';
 import InfiniteScroll from 'react-infinite-scroll-component';
-
 import Swal from 'sweetalert2';
-
-
 
 const baseURL = process.env.REACT_APP_API_BASE_URL;
 
@@ -16,31 +13,23 @@ const CommentModal = ({ course, onClose }) => {
   const [commentText, setCommentText] = useState('');
   const [editingCid, setEditingCid] = useState(null);
   const [editingText, setEditingText] = useState('');
-  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
-
+  const [showAddEmojiPicker, setShowAddEmojiPicker] = useState(false);
+  const [showEditEmojiPickerCid, setShowEditEmojiPickerCid] = useState(null);
   const [page, setPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
 
   const currentFid = localStorage.getItem('fid');
   const authLevel = localStorage.getItem('auth_level');
 
- 
-
-
-
   const fetchComments = useCallback(async (pg = 1, reset = false) => {
     try {
-      // fetch("http://localhost:8000/api/test-cors/")
-      // .then(res => res.json())
-      // .then(data => console.log("✅ Success:", data))
-      // .catch(err => console.error("❌ CORS still broken:", err));
       const res = await axios.get(`${baseURL}/comments/${course.CRN}`);
       if (reset) {
         setComments(res.data);
       } else {
         setComments(prev => [...prev, ...res.data]);
       }
-      setHasMore(res.data.length >= 10); // if less than 10, assume no more
+      setHasMore(res.data.length >= 10);
       setPage(pg + 1);
     } catch (err) {
       toast.error("Failed to load comments");
@@ -63,6 +52,7 @@ const CommentModal = ({ course, onClose }) => {
       });
       toast.success("Comment posted");
       setCommentText('');
+      setShowAddEmojiPicker(false);
       fetchComments(1, true);
       setPage(2);
     } catch (err) {
@@ -80,38 +70,38 @@ const CommentModal = ({ course, onClose }) => {
       cancelButtonColor: '#aaa',
       confirmButtonText: 'Yes, delete it!'
     });
-  
+
     if (!confirm.isConfirmed) return;
-  
+
     try {
       await axios.post(`${baseURL}/comment/${cid}/delete/`, {
-        fid: currentFid 
+        fid: currentFid
       });
       toast.success("Comment deleted");
       fetchComments(1, true);
       setPage(2);
     } catch (err) {
       toast.error("Failed to delete");
-      console.error(err);
     }
   };
 
   const handleEdit = (cid, text) => {
     setEditingCid(cid);
     setEditingText(text);
+    setShowEditEmojiPickerCid(null);
   };
 
   const handleUpdate = async (cid) => {
     if (!editingText.trim()) return;
     try {
       await axios.post(`${baseURL}/comment/${cid}/edit/`, {
-      // await axios.put(`${baseURL}/comments/edit_comment.php`, {
         cid,
         fid: currentFid,
         text: editingText
       });
       toast.success("Comment updated");
       setEditingCid(null);
+      setShowEditEmojiPickerCid(null);
       fetchComments(1, true);
       setPage(2);
     } catch (err) {
@@ -144,10 +134,7 @@ const CommentModal = ({ course, onClose }) => {
           >
             {comments.length === 0 && <p className="text-muted">No comments yet.</p>}
             {comments.map((c, i) => {
-              // console.log(`Comment ${i}:`, c.fid);
-              // console.log(currentFid);
               const canModify = String(c.fid) === currentFid || authLevel === 'admin';
-              // console.log(canModify);
               return (
                 <div key={i} className="comment-bubble">
                   <div className="comment-header d-flex justify-content-between">
@@ -172,10 +159,19 @@ const CommentModal = ({ course, onClose }) => {
                         onChange={(e) => setEditingText(e.target.value)}
                         rows={2}
                       />
-                      <div className="d-flex gap-2">
+                      <div className="d-flex gap-2 align-items-start">
+                        <button
+                          className="btn btn-sm btn-light"
+                          onClick={() => setShowEditEmojiPickerCid(prev => prev === c.cid ? null : c.cid)}
+                        >😄</button>
                         <button className="btn btn-success btn-sm" onClick={() => handleUpdate(c.cid)}>💾 Save</button>
                         <button className="btn btn-secondary btn-sm" onClick={() => setEditingCid(null)}>Cancel</button>
                       </div>
+                      {showEditEmojiPickerCid === c.cid && (
+                        <div className="mt-2">
+                          <EmojiPicker onEmojiClick={(e) => setEditingText(prev => prev + e.emoji)} height={300} />
+                        </div>
+                      )}
                     </>
                   ) : (
                     <div>{c.comment_text}</div>
@@ -195,15 +191,13 @@ const CommentModal = ({ course, onClose }) => {
             placeholder="Write a comment..."
           />
           <div>
-            <button className="btn btn-sm btn-light" onClick={() => setShowEmojiPicker(prev => !prev)}>😄</button>
-            {showEmojiPicker && (
+            <button className="btn btn-sm btn-light" onClick={() => setShowAddEmojiPicker(prev => !prev)}>😄</button>
+            {showAddEmojiPicker && (
               <div className="mt-2">
                 <EmojiPicker onEmojiClick={handleEmojiClick} height={300} />
               </div>
             )}
-            <button className="btn btn-primary btn-sm mt-2" onClick={handlePost}>
-              Post
-            </button>
+            <button className="btn btn-primary btn-sm mt-2" onClick={handlePost}>Post</button>
           </div>
         </div>
       </div>
