@@ -36,15 +36,26 @@ from database_requests import (
 
 import io
 
+
 @csrf_exempt
 def reset_db_view(request):
     if request.method != "POST":
-        return JsonResponse({"success": False, "error": "Only POST allowed"}, status=405)
+        return JsonResponse(
+            {"success": False, "error": "Only POST allowed"}, status=405
+        )
 
     try:
         out = io.StringIO()  # capture output
-        call_command('reset_db', stdout=out)  # 'resetdb' is the name of your command file
-        return JsonResponse({"success": True, "message": "Database reset successful", "log": out.getvalue()})
+        call_command(
+            "reset_db", stdout=out
+        )  # 'resetdb' is the name of your command file
+        return JsonResponse(
+            {
+                "success": True,
+                "message": "Database reset successful",
+                "log": out.getvalue(),
+            }
+        )
     except Exception as e:
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
@@ -73,16 +84,19 @@ def run_scheduler(request):
         try:
             body = json.loads(request.body)
             seed = body.get("seed")
+            admin_fid = body.get("fid")
+
+            # print(admin_fid)
 
             # If no seed is provided, generate one
             if not seed:
                 seed = str(random.randint(100000, 999999))
 
-            print(seed)
+            # print(seed)
 
             # Your scheduler logic here
             course_list = generate_conflict_numbers()
-            output_log, course_list = schedule_courses(course_list, seed)
+            output_log, course_list = schedule_courses(course_list, seed, admin_fid)
 
             result = [
                 {
@@ -605,7 +619,6 @@ def create_configuration(request):
     travel_time = data.get("travel_time", 0)
     days = data.get("days", [])
     times = data.get("times", [])
-    fid = data.get("fid")
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -626,11 +639,6 @@ def create_configuration(request):
                 [config_id, t],
             )
 
-        cursor.execute(
-            "INSERT INTO Configured_by (config_id, fid) VALUES (%s, %s)",
-            [config_id, fid],
-        )
-
     return JsonResponse({"message": "Created", "config_id": config_id})
 
 
@@ -643,6 +651,7 @@ def update_configuration(request, config_id):
     travel_time = data.get("travel_time", 0)
     days = data.get("days", [])
     times = data.get("times", [])
+    fid = data.get("fid")
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -665,6 +674,10 @@ def update_configuration(request, config_id):
                 "INSERT INTO Preferred_Start_Times (config_id, times) VALUES (%s, %s)",
                 [config_id, t],
             )
+        cursor.execute(
+            "INSERT INTO Configured_by (config_id, fid) VALUES (%s, %s)",
+            [config_id, fid],
+        )
 
     return JsonResponse({"message": "Updated"})
 

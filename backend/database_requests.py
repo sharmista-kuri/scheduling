@@ -131,7 +131,9 @@ def create_course(payload: Dict[str, Any]) -> int:
         crn = payload["crn"]
         # Course_Days
         days_str = ",".join(payload.get("days", []))
-        cur.execute("INSERT INTO Course_Days (CRN, days) VALUES (%s, %s);", (crn, days_str))
+        cur.execute(
+            "INSERT INTO Course_Days (CRN, days) VALUES (%s, %s);", (crn, days_str)
+        )
 
         # Prereqs
         # print("[DEBUG] delete request body:", payload["course_code"])
@@ -186,11 +188,14 @@ def list_courses():
 def get_course_relations(crn: int):
     out = {"prereqs": [], "coreqs": []}
     with _get_connection().cursor() as cur:
-        cur.execute("""
+        cur.execute(
+            """
             SELECT CRN2 FROM Coreqs WHERE CRN1 = %s
             UNION
             SELECT CRN1 FROM Coreqs WHERE CRN2 = %s;
-        """, (crn, crn))
+        """,
+            (crn, crn),
+        )
         out["coreqs"] = [x[0] for x in cur.fetchall()]
 
         cur.execute(
@@ -375,8 +380,23 @@ def load_possible_times():
             return [(r[0].split("."), time_str2int(str(r[1]))) for r in rows]
 
     start, end, inc = time_str2int("8:00"), time_str2int("19:00"), 90
-    patterns = [["M", "W"], ["T", "TH"]]
-    return [(p, t) for t in range(start, end + 1, inc) for p in patterns]
+    times = [t for t in range(start, end, inc)]
+
+    start, end, inc = time_str2int("10:10"), time_str2int("19:00"), 90
+    other_times = [t for t in range(start, end, inc)]
+
+    times.extend(other_times)
+    times.sort()
+
+    # print(times)
+
+    patterns_80 = [["M", "W"], ["T", "TH"]]
+    set_80 = [(p, t) for t in range(start, end + 1, inc) for p in patterns_80]
+
+    patterns_other = [["F"], ["W"], ["TH"]]
+    set_other = [(p, t) for t in range(start, end + 1, inc) for p in patterns_other]
+
+    return set_80, set_other
 
 
 # LOAD IN TEST DUMMY DATA TO DB

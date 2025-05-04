@@ -185,7 +185,7 @@ def conflict_table_update(conflict_numbers, day, time):
         conflict_table[day][conflict_number].append(time)
 
 
-def schedule_courses(course_list, seed):
+def schedule_courses(course_list, seed, admin_fid):
     """
     Input: List of course objects to be scheduled
 
@@ -210,7 +210,7 @@ def schedule_courses(course_list, seed):
 
     output_log = ""
 
-    possible_times = load_possible_times()
+    possible_times_80, possible_times_other = load_possible_times()
 
     # TODO: Load in travel_time from DB
     travel_time = 0
@@ -247,6 +247,12 @@ def schedule_courses(course_list, seed):
                 continue
 
             scheduled = False
+
+            if course.duration == 80:
+                possible_times = possible_times_80
+            else:
+                possible_times = possible_times_other
+
             for days, time in possible_times:
                 # Check for course overlap at proposed time. If there is overlap, continue to next potential time
                 if is_conflict_overlap(
@@ -265,14 +271,15 @@ def schedule_courses(course_list, seed):
 
             if not scheduled:
                 output_log += f"Error scheduling {course.crn}\n"
-            course_list.remove(course)
+            else:
+                course_list.remove(course)
         overlap_allowed += 1
 
     # print(conflict_table)
     # print(course_list)
 
-    # for course in course_copy:
-    #     output_log += str(course)
+    for course in course_copy:
+        output_log += str(course)
 
     update_db(course_copy)
     # upsert_courses(course_copy)
@@ -299,7 +306,10 @@ def generate_schedule():
 
 if __name__ == "__main__":
     # main()
-    generate_schedule()
+    # generate_schedule()
+    times = get_configuration(1)
+    # times = load_possible_times()
+    print(times)
     # courses = list_courses()
     # crn_map, _ = get_course_map(courses)
     # # upload_dummy_data()

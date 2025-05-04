@@ -33,7 +33,11 @@ class Course:
             self.end_time = end_time
 
         if days != None:
-            self.days = [] if not days else (days if isinstance(days, list) else days.split(","))
+            self.days = (
+                []
+                if not days
+                else (days if isinstance(days, list) else days.split(","))
+            )
         else:
             self.days = days or []
         self.fid = fid
@@ -49,8 +53,9 @@ class Course:
     def __repr__(self):
         # return f"(CRN: {self.crn} Course_Code: {self.course_code} Pinned: {self.is_pinned}\n)"
         # return f"{self.crn}, {self.conflict_numbers}\n"
-        return f"{'-'*30}\n{self.crn}   {self.days}: {time_int2str(self.start_time)} - {time_int2str(self.end_time)}\n{self.conflict_numbers}\n{'-'*30}\n"
+        # return f"{'-'*30}\n{self.crn}   {self.days}: {time_int2str(self.start_time)} - {time_int2str(self.end_time)}\n{self.conflict_numbers}\n{'-'*30}\n"
         # return f"{self.crn}"
+        return f"{self.crn}, {self.prereqs}, {self.coreqs}\n"
 
 
 def get_course_map(all_courses):
