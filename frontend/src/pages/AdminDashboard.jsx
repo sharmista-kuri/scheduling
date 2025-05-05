@@ -42,7 +42,7 @@ const AdminDashboard = () => {
         {[
           { title: 'Manage Faculty', link: '/admin/faculty' },
           { title: 'Manage Courses', link: '/admin/courses' },
-          { title: 'Upload CSV', link: '/admin/courses' },
+          { title: 'Manage Configuration', link: '/admin/configuration' },
           { title: 'Calender', link: '/calendar' },
         ].map((item, i) => (
           <a href={item.link} key={i} className="nav-card">

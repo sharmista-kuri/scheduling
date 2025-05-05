@@ -86,7 +86,7 @@ def run_scheduler(request):
             seed = body.get("seed")
             admin_fid = body.get("fid")
 
-            # print(admin_fid)
+            # print(f"IN VIEWS ADMIN: {admin_fid}")
 
             # If no seed is provided, generate one
             if not seed:
@@ -620,7 +620,7 @@ def create_configuration(request):
     days = data.get("days", [])
     times = data.get("times", [])
     fid = data.get("fid")
-    
+
     with connection.cursor() as cursor:
         cursor.execute(
             "INSERT INTO Configuration (travel_time) VALUES (%s)", [travel_time]
@@ -656,7 +656,6 @@ def update_configuration(request, config_id):
     travel_time = data.get("travel_time", 0)
     days = data.get("days", [])
     times = data.get("times", [])
-    
 
     with connection.cursor() as cursor:
         cursor.execute(
@@ -679,7 +678,6 @@ def update_configuration(request, config_id):
                 "INSERT INTO Preferred_Start_Times (config_id, times) VALUES (%s, %s)",
                 [config_id, t],
             )
-        
 
     return JsonResponse({"message": "Updated"})
 

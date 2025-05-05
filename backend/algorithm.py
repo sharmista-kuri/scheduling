@@ -111,7 +111,8 @@ def generate_conflict_numbers():
     # Data is preformatted for faculty, simply add entire list to same group
     for group in faculty_groups:
         for course in group:
-            course.conflict_numbers.add(current_conflict_number)
+            # Make faculty conflict numbers negative to differentiate them
+            course.conflict_numbers.add(-current_conflict_number)
         current_conflict_number += 1
 
     # STEP 1 PART 3: COREQ MERGING
@@ -150,6 +151,8 @@ def is_conflict_overlap(
     proposed_end_time = proposed_start_time + course.duration
     overlap_count = 0
 
+    valid_days = set()
+
     for day in days:
         conflict_day = conflict_table[day]
         # Iterate over every conflict number in the course
@@ -164,10 +167,14 @@ def is_conflict_overlap(
                     proposed_start_time - travel_time >= time[1]
                     or time[0] >= proposed_end_time + travel_time
                 ):
-                    overlap_count += 1
+                    # Only allow conflict overlaps on non-faculty related conflict numbers
+                    if conflict_number > 0:
+                        overlap_count += 1
                     # If the number of overlaps is greater than the maximum allowed, return True for conflict
                     if overlap_count > conflict_override:
-                        return True
+                        valid_days.add(day)
+                        if valid_days == set(days):
+                            return True
     # At this point, all potential conflicts have been checked and there wasn't an overlap
     return False
 
@@ -210,10 +217,9 @@ def schedule_courses(course_list, seed, admin_fid):
 
     output_log = ""
 
-    possible_times_80, possible_times_other = load_possible_times()
-
-    # TODO: Load in travel_time from DB
-    travel_time = 0
+    possible_times_80, possible_times_other, travel_time = load_possible_times(
+        admin_fid
+    )
 
     # STEP 2 PART 1: PLACE ALL PINNED COURSES INTO SCHEDULE
 
@@ -278,8 +284,8 @@ def schedule_courses(course_list, seed, admin_fid):
     # print(conflict_table)
     # print(course_list)
 
-    for course in course_copy:
-        output_log += str(course)
+    # for course in course_copy:
+    #     output_log += str(course)
 
     update_db(course_copy)
     # upsert_courses(course_copy)
@@ -289,8 +295,6 @@ def schedule_courses(course_list, seed, admin_fid):
 
 def update_db(courses):
     for course in courses:
-        # patch = {}
-        # UNCOMMENT ME FOR BUG
         patch = {
             "days": course.days,
             "start_time": time_int2str(course.start_time),
@@ -301,15 +305,15 @@ def update_db(courses):
 
 def generate_schedule():
     course_list = generate_conflict_numbers()
-    schedule_courses(course_list)
+    schedule_courses(course_list, 0, 1)
 
 
 if __name__ == "__main__":
     # main()
-    # generate_schedule()
-    times = get_configuration(1)
-    # times = load_possible_times()
-    print(times)
+    generate_schedule()
+    # times = get_configuration(1)
+    # times = load_possible_times(1)
+    # print(times)
     # courses = list_courses()
     # crn_map, _ = get_course_map(courses)
     # # upload_dummy_data()

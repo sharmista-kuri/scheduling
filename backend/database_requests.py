@@ -315,7 +315,7 @@ def delete_course(crn: int):
 def get_configuration(fid: int):
     query = """
         SELECT cfg.config_id,cfg.travel_time,
-               GROUP_CONCAT(DISTINCT pd.days)  AS days,
+               GROUP_CONCAT(DISTINCT pd.days SEPARATOR ' ')  AS days,
                GROUP_CONCAT(DISTINCT pt.times) AS times
         FROM Configuration cfg
         JOIN Configured_by cb ON cfg.config_id=cb.config_id
@@ -362,144 +362,34 @@ def save_configuration(fid: int, travel_time: int, days: list, times: list):
     return True
 
 
-def load_possible_times():
-    with _get_connection().cursor() as cur:
-        cur.execute(
-            """
-            SELECT COUNT(*)
-            FROM information_schema.tables
-            WHERE table_schema = DATABASE()
-              AND table_name   = 'PossibleTimes';
-            """
-        )
-        exists = cur.fetchone()[0] == 1
+def load_possible_times(admin_fid):
 
-        if exists:
-            cur.execute("SELECT DayPattern, Start_Time FROM PossibleTimes;")
-            rows = cur.fetchall()
-            return [(r[0].split("."), time_str2int(str(r[1]))) for r in rows]
+    print(admin_fid)
 
-    start, end, inc = time_str2int("8:00"), time_str2int("19:00"), 90
-    times = [t for t in range(start, end, inc)]
+    config = get_configuration(admin_fid)
 
-    start, end, inc = time_str2int("10:10"), time_str2int("19:00"), 90
-    other_times = [t for t in range(start, end, inc)]
+    time_strings = config["times"].split(",")
+    times = [time_str2int(time[:-3]) for time in time_strings]
+    # print(times)
 
-    times.extend(other_times)
     times.sort()
+
+    day_strings = config["days"].split(" ")
+    days = [day.split(",") for day in day_strings]
+
+    single_days = [day for day in days if len(day) == 1]
+    other_days = [day for day in days if len(day) != 1]
+
+    # print(single_days, other_days)
 
     # print(times)
 
-    patterns_80 = [["M", "W"], ["T", "TH"]]
-    set_80 = [(p, t) for t in range(start, end + 1, inc) for p in patterns_80]
+    # patterns_80 = [["M", "W"], ["T", "TH"]]
+    set_80 = [(p, t) for t in times for p in other_days]
 
-    patterns_other = [["F"], ["W"], ["TH"]]
-    set_other = [(p, t) for t in range(start, end + 1, inc) for p in patterns_other]
+    # patterns_other = [["F"], ["W"], ["TH"]]
+    set_other = [(p, t) for t in times for p in single_days]
 
-    return set_80, set_other
+    # print(set_80, set_other)
 
-
-# LOAD IN TEST DUMMY DATA TO DB
-def upload_dummy_data():
-
-    test_teaches = ["A", "B", "C", "D", "E", "F"]
-
-    test_courses_list = [
-        ("1111", "111", False, 80, None, None, None, "A"),
-        ("2222", "222", False, 80, None, None, None, "A"),
-        ("2002", "222", False, 170, None, None, None, "B"),
-        ("2112", "222", False, 80, None, None, None, "D"),
-        ("3003", "333", False, 170, None, None, None, "F"),
-        ("3333", "333", False, 80, None, None, None, "C"),
-        ("4444", "444", False, 80, None, None, None, "D"),
-        ("5555", "555", False, 80, None, None, None, "C"),
-        ("6666", "666", True, 80, "9:30", "10:50", ["M", "W"], "B"),
-        ("7777", "777", False, 80, None, None, None, "D"),
-        ("7007", "777", False, 170, None, None, None, "E"),
-        ("8888", "888", True, 80, "8:00", "9:20", ["T", "TH"], "E"),
-        ("9999", "999", False, 80, None, None, None, "B"),
-    ]
-
-    test_prereq_list = [
-        ("111", "222"),
-        ("222", "444"),
-        ("333", "444"),
-        ("333", "999"),
-        ("444", "555"),
-        ("444", "666"),
-        ("555", "777"),
-        ("555", "888"),
-        ("666", "888"),
-    ]
-
-    test_coreqs = [
-        ("2222", "2002"),
-        ("2112", "2002"),
-        ("2222", "2112"),
-        ("3333", "3003"),
-        ("7777", "7007"),
-    ]
-
-    teacher_id = {"A": 68, "B": 69, "C": 70, "D": 71, "E": 72, "F": 73}
-
-    # with _get_connection().cursor() as cur:
-    #     for teacher in test_teaches:
-    #         cur.execute(
-    #             """
-    #             INSERT INTO Faculty (NAME)
-    #             VALUES (%s)
-    #             """,
-    #             (teacher),
-    #         )
-
-    # with _get_connection().cursor() as cur:
-    #     for course in test_courses_list:
-    #         cur.execute(
-    #             """
-    #             INSERT INTO Course (CRN,course_code,is_pinned,duration,start_time,end_time,fid)
-    #             VALUES (%s,%s,%s,%s,%s,%s,%s)
-    #             """,
-    #             (
-    #                 course[0],
-    #                 course[1],
-    #                 course[2],
-    #                 course[3],
-    #                 course[4],
-    #                 course[5],
-    #                 teacher_id[course[-1]],
-    #             ),
-    #         )
-
-    # with _get_connection().cursor() as cur:
-    #     for prereq in test_prereq_list:
-    #         cur.execute(
-    #             """
-    #             INSERT INTO Prereqs (prereq_course_code,course_code)
-    #             VALUES (%s,%s)
-    #             """,
-    #             (
-    #                 prereq[0],
-    #                 prereq[1],
-    #             ),
-    #         )
-
-    # with _get_connection().cursor() as cur:
-    #     for prereq in test_coreqs:
-    #         cur.execute(
-    #             """
-    #             INSERT INTO Coreqs (CRN1,CRN2)
-    #             VALUES (%s,%s)
-    #             """,
-    #             (
-    #                 prereq[0],
-    #                 prereq[1],
-    #             ),
-    #         )
-
-    # with _get_connection().cursor() as cur:
-    #     for prereq in test_coreqs:
-    #         cur.execute(
-    #             """
-    #             UPDATE Course SET NAME=CRN
-    #             """,
-    #         )
+    return set_80, set_other, config["travel_time"]

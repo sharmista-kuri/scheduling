@@ -40,7 +40,7 @@ def build_course_objects(csv_path: str) -> List[Course]:
             # Look up fid; default to None (upsert_courses will insert Faculty if missing)
             fid = fid_map.get(faculty_name)
 
-            is_pinned = "FALSE"
+            is_pinned = 1 if row[5] == "TRUE" else 0
 
             c = Course(crn=crn, course_code=code)
             c.fid = fid  # may be None
