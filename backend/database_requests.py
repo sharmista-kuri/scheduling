@@ -364,7 +364,7 @@ def save_configuration(fid: int, travel_time: int, days: list, times: list):
 
 def load_possible_times(admin_fid):
 
-    print(admin_fid)
+    # print(admin_fid)
 
     config = get_configuration(admin_fid)
 

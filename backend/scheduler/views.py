@@ -12,6 +12,7 @@ from django.core.management import call_command
 from import_csv import *
 from django.db import connection
 from time_conversion import time_int2str
+import tempfile
 import random
 import json
 
@@ -60,22 +61,38 @@ def reset_db_view(request):
         return JsonResponse({"success": False, "error": str(e)}, status=500)
 
 
+
+
+
+
 @csrf_exempt
 def upload_csv_view(request):
     if request.method == "POST" and request.FILES.get("csvFile"):
         file = request.FILES["csvFile"]
-        path = default_storage.save(f"temp/{file.name}", file)
-        csv_path = os.path.join(default_storage.location, path)
 
         try:
-            main(csv_path)
-            return JsonResponse(
-                {"success": True, "message": "CSV uploaded and processed."}
-            )
-        except Exception as e:
-            return JsonResponse({"success": False, "message": str(e)}, status=500)
+            # Create a temporary file for storing the uploaded CSV
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".csv") as tmp_file:
+                for chunk in file.chunks():
+                    tmp_file.write(chunk)
+                csv_path = tmp_file.name  # Get the path of the temp file
 
-    return JsonResponse({"success": False, "message": "No file uploaded."}, status=400)
+            # Process the CSV
+            main(csv_path)
+
+            # Clean up the temporary file
+            os.remove(csv_path)
+
+            return JsonResponse({"success": True, "message": "CSV uploaded and processed."})
+        except Exception as e:
+            # Clean up even on failure
+            try:
+                os.remove(csv_path)
+            except Exception:
+                pass
+            return JsonResponse({"success": False, "message": str(e)})
+
+    return JsonResponse({"success": False, "message": "POST request with CSV file required"})
 
 
 @csrf_exempt
