@@ -28,23 +28,23 @@ const Navbar = ({ onLogout }) => {
             <>
               <a href="/admin/" className="navbar-brand mb-0 fs-5">📅 Course Scheduler</a>
               <a href="/admin/faculty" className="btn btn-outline-light btn-sm">
-                View Faculty
+                 Faculty
               </a>
               <a href="/admin/courses" className="btn btn-outline-light btn-sm">
-                View Course
+                 Course
               </a>
               <a href="/admin/configuration" className="btn btn-outline-light btn-sm">
-                View Configuration
+                 Configuration
               </a>
               <a href="/generate/" className="btn btn-outline-light btn-sm">
-                Generate Algorithm
+                Generate Schedule
               </a>
 
             </>
           )}
 
           <a href="/calendar" className="btn btn-outline-light btn-sm">
-            View Calendar
+             Calendar
           </a>
           
 
