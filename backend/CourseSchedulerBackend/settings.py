@@ -190,13 +190,27 @@ WSGI_APPLICATION = 'CourseSchedulerBackend.wsgi.application'
 # }
 
 
+# DATABASES = {
+#     'default': {
+#         'ENGINE': 'django.db.backends.mysql',
+#         'NAME': 'course_scheduling_db',
+#         'USER': 'sharmista',
+#         'PASSWORD': 'csi',
+#         'HOST': '34.21.7.4',
+#         'PORT': '3306',
+#         'OPTIONS': {
+#             'charset': 'utf8mb4',
+#             'init_command': "SET NAMES 'utf8mb4'"
+#         }
+#     }
+# }
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'course_scheduling_db',
-        'USER': 'sharmista',
+        'USER': 'root',
         'PASSWORD': 'csi',
-        'HOST': '34.21.7.4',
+        'HOST': '34.123.165.52',
         'PORT': '3306',
         'OPTIONS': {
             'charset': 'utf8mb4',
