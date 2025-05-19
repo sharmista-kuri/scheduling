@@ -208,7 +208,7 @@ DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
         'NAME': 'course_scheduling_db',
-        'USER': 'root',
+        'USER': 'admin',
         'PASSWORD': 'csi',
         'HOST': '34.123.165.52',
         'PORT': '3306',
